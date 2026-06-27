@@ -71,14 +71,23 @@ Optional **Variables** (defaults are already in the workflow):
 
 **Fastest setup:** open the backend repo → Settings → Environments → production → copy each secret name/value into the admin repo’s production environment. Change only `DEPLOY_PATH` and `DEPLOY_PORT_APP`.
 
-Or run locally (after `gh auth login`):
+Or configure **all three repos** at once from the monorepo:
+
+```bash
+cd backend
+cp deploy/github-actions.secrets.example deploy/github-actions.secrets
+# Set DEPLOY_HOST and DEPLOY_SSH_KEY_FILE
+gh auth login
+chmod +x deploy/*.sh
+./deploy/configure-all-repos.sh
+```
+
+Or configure this repo only:
 
 ```bash
 cd dashboard
 cp deploy/github-actions.secrets.example deploy/github-actions.secrets
-# Fill DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY_FILE, GHCR_TOKEN only
 ./deploy/set-github-actions-config.sh belgiumairporttransfers-creator/city-airport-taxis-admin
-gh variable set SSH_DEPLOY_ENABLED -R belgiumairporttransfers-creator/city-airport-taxis-admin -b "true"
 ```
 
 ## Deploy

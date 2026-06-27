@@ -8,11 +8,11 @@
 #
 # Usage:
 #   ./deploy/set-github-actions-config.sh belgiumairporttransfers-creator/city-airport-taxis-admin
-#   ./deploy/set-github-actions-config.sh belgiumairporttransfers-creator/city-airport-taxis-driver
 set -euo pipefail
 
 REPO="${1:-}"
 CONFIG="${2:-deploy/github-actions.secrets}"
+ENV_NAME="${GITHUB_ENVIRONMENT:-production}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ -z "$REPO" ]]; then
@@ -53,7 +53,6 @@ require_var() {
 require_var DEPLOY_HOST
 require_var DEPLOY_USER
 require_var DEPLOY_SSH_KEY_FILE
-require_var GHCR_TOKEN
 require_var NEXT_PUBLIC_BACKEND_URL
 require_var NEXT_PUBLIC_SITE_URL
 
@@ -62,34 +61,40 @@ if [[ ! -f "$DEPLOY_SSH_KEY_FILE" ]]; then
   exit 1
 fi
 
-echo "Configuring GitHub Actions for $REPO ..."
+echo "Ensuring GitHub environment: ${ENV_NAME}"
+gh api --method PUT "repos/${REPO}/environments/${ENV_NAME}" -f wait_timer=0 >/dev/null
 
-gh secret set DEPLOY_HOST -R "$REPO" -b "$DEPLOY_HOST"
-gh secret set DEPLOY_USER -R "$REPO" -b "$DEPLOY_USER"
-gh secret set DEPLOY_SSH_KEY -R "$REPO" < "$DEPLOY_SSH_KEY_FILE"
-gh secret set GHCR_TOKEN -R "$REPO" -b "$GHCR_TOKEN"
+echo "Configuring GitHub Actions for ${REPO} (environment: ${ENV_NAME}) ..."
+
+gh secret set DEPLOY_HOST --env "${ENV_NAME}" -R "$REPO" -b "$DEPLOY_HOST"
+gh secret set DEPLOY_USER --env "${ENV_NAME}" -R "$REPO" -b "$DEPLOY_USER"
+gh secret set DEPLOY_SSH_KEY --env "${ENV_NAME}" -R "$REPO" < "$DEPLOY_SSH_KEY_FILE"
+
+if [[ -n "${GHCR_TOKEN:-}" ]]; then
+  gh secret set GHCR_TOKEN --env "${ENV_NAME}" -R "$REPO" -b "$GHCR_TOKEN"
+fi
 
 if [[ -n "${DEPLOY_PATH:-}" ]]; then
-  gh secret set DEPLOY_PATH -R "$REPO" -b "$DEPLOY_PATH"
+  gh secret set DEPLOY_PATH --env "${ENV_NAME}" -R "$REPO" -b "$DEPLOY_PATH"
 fi
 
 if [[ -n "${DEPLOY_PORT:-}" ]]; then
-  gh secret set DEPLOY_PORT -R "$REPO" -b "$DEPLOY_PORT"
+  gh secret set DEPLOY_PORT --env "${ENV_NAME}" -R "$REPO" -b "$DEPLOY_PORT"
 fi
 
 if [[ -n "${DEPLOY_PORT_APP:-}" ]]; then
-  gh secret set DEPLOY_PORT_APP -R "$REPO" -b "$DEPLOY_PORT_APP"
+  gh secret set DEPLOY_PORT_APP --env "${ENV_NAME}" -R "$REPO" -b "$DEPLOY_PORT_APP"
 fi
 
-gh variable set NEXT_PUBLIC_BACKEND_URL -R "$REPO" -b "$NEXT_PUBLIC_BACKEND_URL"
-gh variable set NEXT_PUBLIC_SITE_URL -R "$REPO" -b "$NEXT_PUBLIC_SITE_URL"
+gh variable set NEXT_PUBLIC_BACKEND_URL --env "${ENV_NAME}" -R "$REPO" -b "$NEXT_PUBLIC_BACKEND_URL"
+gh variable set NEXT_PUBLIC_SITE_URL --env "${ENV_NAME}" -R "$REPO" -b "$NEXT_PUBLIC_SITE_URL"
 
 if [[ -n "${NEXT_PUBLIC_SOCKET_PATH:-}" ]]; then
-  gh variable set NEXT_PUBLIC_SOCKET_PATH -R "$REPO" -b "$NEXT_PUBLIC_SOCKET_PATH"
+  gh variable set NEXT_PUBLIC_SOCKET_PATH --env "${ENV_NAME}" -R "$REPO" -b "$NEXT_PUBLIC_SOCKET_PATH"
 fi
 
-gh variable set SSH_DEPLOY_ENABLED -R "$REPO" -b "true"
+gh variable set SSH_DEPLOY_ENABLED --env "${ENV_NAME}" -R "$REPO" -b "true"
 
 echo ""
-echo "Done. Secrets and variables are set on $REPO"
-echo "Push to main or re-run the Deploy workflow in GitHub Actions."
+echo "Done. Auto-deploy is enabled for ${REPO}."
+echo "Push to main or run the Deploy workflow in GitHub Actions."
