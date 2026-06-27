@@ -1,0 +1,26 @@
+const API_ROUTES = {
+    AUTH_LOGIN: "/admin/auth/login",
+    AUTH_LOGOUT: "/admin/auth/logout",
+    AUTH_FORGOT_PASSWORD: "/admin/auth/forgot-password",
+    AUTH_RESET_PASSWORD: "/admin/auth/reset-password",
+    AUTH_REFRESH: "/admin/auth/refresh",
+    AUTH_ME: "/admin/auth/me",
+    AUTH_UPDATE_PROFILE: "/admin/auth/update-profile",
+    AUTH_CHANGE_PASSWORD: "/admin/auth/change-password",
+    AUTH_ACTIVITIES: "/admin/auth/activities",
+    AUTH_SESSIONS: "/admin/auth/sessions",
+    AUTH_LOGOUT_ALL: "/admin/auth/logout-all",
+    SETTINGS: "/admin/settings",
+    NEWSLETTERS: "/admin/newsletters",
+    NEWSLETTER_DRAFTS: "/admin/newsletter-drafts",
+    NEWSLETTER_CAMPAIGNS: "/admin/newsletter-campaigns",
+    NEWSLETTER_CAMPAIGN_RECIPIENTS: "/admin/newsletter-campaign-recipients",
+    VEHICLE_CATEGORIES: "/admin/vehicle-categories",
+    VEHICLE_PRICING: "/admin/vehicle-pricing",
+    VEHICLES: "/admin/vehicles",
+    DRIVERS: "/admin/drivers",
+    NOTIFICATIONS: "/admin/notifications",
+    UPLOAD: "/upload",
+};
+
+export default API_ROUTES;

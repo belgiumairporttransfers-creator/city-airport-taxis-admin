@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.gitignore
+.env*
+!.env.production.example
+README.md
+*.md
+.DS_Store
+coverage
+.vscode
+.contentlayer
+tsconfig.tsbuildinfo
