@@ -24,6 +24,7 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   IMAGE: ghcr.io/${{ github.repository_owner }}/city-airport-taxis-admin
+  DEFAULT_DEPLOY_PATH: /opt/city-airport-taxis-admin
 
 jobs:
   deploy:
@@ -40,6 +41,41 @@ jobs:
         run: |
           test -f Dockerfile
           test -f docker-compose.prod.yml
+
+      - name: Validate GitHub deploy configuration
+        run: |
+          missing=0
+          if [ -z "${{ secrets.DEPLOY_HOST }}" ]; then
+            echo "::error::Missing repository secret DEPLOY_HOST"
+            missing=1
+          fi
+          if [ -z "${{ secrets.DEPLOY_USER }}" ]; then
+            echo "::error::Missing repository secret DEPLOY_USER"
+            missing=1
+          fi
+          if [ -z "${{ secrets.DEPLOY_SSH_KEY }}" ]; then
+            echo "::error::Missing repository secret DEPLOY_SSH_KEY"
+            missing=1
+          fi
+          if [ -z "${{ secrets.GHCR_TOKEN }}" ]; then
+            echo "::warning::Missing repository secret GHCR_TOKEN — VPS image pull may fail for private packages"
+          fi
+          if [ -z "${{ vars.NEXT_PUBLIC_BACKEND_URL }}" ]; then
+            echo "::warning::Missing repository variable NEXT_PUBLIC_BACKEND_URL — build may use an empty API URL"
+          fi
+          if [ -z "${{ vars.NEXT_PUBLIC_SITE_URL }}" ]; then
+            echo "::warning::Missing repository variable NEXT_PUBLIC_SITE_URL — build may use an empty site URL"
+          fi
+          if [ "${{ vars.SSH_DEPLOY_ENABLED }}" = "false" ]; then
+            echo "::error::SSH deploy is disabled via SSH_DEPLOY_ENABLED=false"
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            echo ""
+            echo "Configure the admin repo secrets/variables (Settings → Secrets and variables → Actions)."
+            echo "See .github/DEPLOY.md for the full list."
+            exit 1
+          fi
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -63,7 +99,6 @@ jobs:
             NEXT_PUBLIC_SOCKET_PATH=${{ vars.NEXT_PUBLIC_SOCKET_PATH || '/socket.io' }}
 
       - name: Sync compose files on VPS
-        if: vars.SSH_DEPLOY_ENABLED == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -71,15 +106,14 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           source: "docker-compose.prod.yml,deploy/docker-deploy.sh"
-          target: ${{ secrets.DEPLOY_PATH || '/opt/city-airport-taxis-admin' }}
+          target: ${{ secrets.DEPLOY_PATH || env.DEFAULT_DEPLOY_PATH }}
 
       - name: Deploy to VPS via SSH
-        if: vars.SSH_DEPLOY_ENABLED == 'true'
         uses: appleboy/ssh-action@v1.2.0
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           IMAGE: ${{ env.IMAGE }}:${{ github.sha }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || env.DEFAULT_DEPLOY_PATH }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
@@ -104,7 +138,6 @@ jobs:
             ./deploy/docker-deploy.sh
 
       - name: Post-deploy health check
-        if: vars.SSH_DEPLOY_ENABLED == 'true'
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
