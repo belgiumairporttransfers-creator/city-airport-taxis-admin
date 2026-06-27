@@ -58,8 +58,8 @@ Use the **same VPS SSH secrets** as the backend, with a different deploy path:
 | Secret `DEPLOY_PATH` | `/opt/city-airport-taxis-admin` |
 | Secret `DEPLOY_PORT_APP` | `3000` |
 | Secret `GHCR_TOKEN` | PAT with `read:packages` (same as backend) |
-| Variable `NEXT_PUBLIC_BACKEND_URL` | `https://api.yourdomain.com/api` |
-| Variable `NEXT_PUBLIC_SITE_URL` | `https://admin.yourdomain.com` |
+| Variable `NEXT_PUBLIC_BACKEND_URL` | `https://api.city-airport-taxis.be/api` |
+| Variable `NEXT_PUBLIC_SITE_URL` | `https://admin.city-airport-taxis.be` |
 | Variable `NEXT_PUBLIC_SOCKET_PATH` | `/socket.io` (optional) |
 
 ## Deploy
