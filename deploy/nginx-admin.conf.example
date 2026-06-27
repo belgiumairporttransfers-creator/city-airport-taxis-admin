@@ -1,5 +1,4 @@
-# Example Nginx reverse proxy for City Airport Taxis Admin Dashboard
-# Place in /etc/nginx/sites-available/city-airport-taxis-admin
+# Admin dashboard — admin.city-airport-taxis.be
 
 upstream city_airport_taxis_admin {
     server 127.0.0.1:3000;
@@ -8,7 +7,7 @@ upstream city_airport_taxis_admin {
 
 server {
     listen 80;
-    server_name admin.example.com;
+    server_name admin.city-airport-taxis.be;
 
     client_max_body_size 10m;
 
