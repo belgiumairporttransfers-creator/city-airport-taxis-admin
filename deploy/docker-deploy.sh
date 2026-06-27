@@ -23,14 +23,15 @@ if [[ -n "${IMAGE:-}" ]]; then
 else
   echo "==> Building image locally"
   export IMAGE="city-airport-taxis-admin:latest"
+  docker compose --env-file .env.production -f "${COMPOSE_FILE}" build admin
 fi
 
 echo "==> Starting services"
-docker compose -f "${COMPOSE_FILE}" up -d --remove-orphans
+docker compose --env-file .env.production -f "${COMPOSE_FILE}" up -d --remove-orphans
 
 echo "==> Waiting for health check"
 sleep 5
 curl -fsS "http://127.0.0.1:${PORT:-3000}/auth/login" >/dev/null
 
 echo "==> Deploy complete"
-docker compose -f "${COMPOSE_FILE}" ps
+docker compose --env-file .env.production -f "${COMPOSE_FILE}" ps

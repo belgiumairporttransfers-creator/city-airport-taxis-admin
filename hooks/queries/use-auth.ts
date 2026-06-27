@@ -11,6 +11,7 @@ import {
     revokeSession,
     logoutAllDevices,
 } from "@/lib/api/auth";
+import { clearCsrfToken } from "@/lib/api/csrf";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -77,6 +78,7 @@ export const useAuthLogout = () => {
     return useMutation({
         mutationFn: logout,
         onSuccess: async () => {
+            clearCsrfToken();
             queryClient.removeQueries({ queryKey: AUTH_ME_QUERY_KEY });
             toast.success("Logged out successfully.");
             router.push("/auth/login");

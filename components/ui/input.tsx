@@ -534,46 +534,54 @@ export const Input: React.FC<InputProps> = ({
         return (
           <FormItem
             className={cn(
-              "group relative space-y-0",
+              "space-y-0",
               (type === "date" || type === "time" || type === "select") &&
                 "cursor-pointer",
               className
             )}
           >
-            <FormControl>{renderInput(field, hasError)}</FormControl>
-            {label && (
-              <FormLabel
-                className={cn(
-                  inputVariants({
-                    element: type === "textarea" ? "labelTextarea" : "label",
-                  }),
-                  !isEmptyValue &&
-                    "top-2 -translate-y-5 scale-75 bg-card px-2",
-                  (type === "select" || type === "date" || type === "time") &&
-                    "pointer-events-none bg-white group-focus-within:bg-white",
-                  (type === "date" || type === "time") &&
-                    isEmptyValue &&
-                    "top-1/2 -translate-y-1/2 scale-100 bg-transparent group-focus-within:bg-white"
-                )}
-              >
-                {label}
-              </FormLabel>
-            )}
-            {type === "password" && (
-              <button
-                type="button"
-                tabIndex={-1}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute top-1/2 -translate-y-1/2 cursor-pointer ltr:right-4 rtl:left-4"
-                onClick={() => setShowPassword((prev) => !prev)}
-              >
-                <Icon
-                  icon={showPassword ? "heroicons:eye" : "heroicons:eye-slash"}
-                  className="h-4 w-4 text-default-400"
-                />
-              </button>
-            )}
-            <FormMessage className="mt-1.5" />
+            <div
+              className={cn(
+                "group relative",
+                (type === "date" || type === "time" || type === "select") &&
+                  "cursor-pointer"
+              )}
+            >
+              <FormControl>{renderInput(field, hasError)}</FormControl>
+              {label && (
+                <FormLabel
+                  className={cn(
+                    inputVariants({
+                      element: type === "textarea" ? "labelTextarea" : "label",
+                    }),
+                    !isEmptyValue &&
+                      "top-2 -translate-y-5 scale-75 bg-card px-2",
+                    (type === "select" || type === "date" || type === "time") &&
+                      "pointer-events-none bg-white group-focus-within:bg-white",
+                    (type === "date" || type === "time") &&
+                      isEmptyValue &&
+                      "top-1/2 -translate-y-1/2 scale-100 bg-transparent group-focus-within:bg-white"
+                  )}
+                >
+                  {label}
+                </FormLabel>
+              )}
+              {type === "password" && (
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute top-1/2 -translate-y-1/2 cursor-pointer ltr:right-4 rtl:left-4"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  <Icon
+                    icon={showPassword ? "heroicons:eye" : "heroicons:eye-slash"}
+                    className="h-4 w-4 text-default-400"
+                  />
+                </button>
+              )}
+            </div>
+            <FormMessage />
           </FormItem>
         );
       }}

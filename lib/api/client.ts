@@ -5,8 +5,17 @@ import axios, {
     type AxiosResponse,
 } from "axios";
 import API_ROUTES from "@/lib/api/routes";
+import { captureCsrfToken, getCsrfToken } from "@/lib/api/csrf";
 
-const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL;
+export { clearCsrfToken } from "@/lib/api/csrf";
+
+const baseURL =
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
+    (process.env.NODE_ENV === "development" ? "http://localhost:5000/api" : undefined);
+
+if (!baseURL) {
+    throw new Error("NEXT_PUBLIC_BACKEND_URL is not configured.");
+}
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -27,12 +36,6 @@ export type ApiResponse<T = unknown> = {
 export type ApiError = {
     message: string;
     status?: number;
-};
-
-const getCookie = (name: string): string | undefined => {
-    if (typeof document === "undefined") return undefined;
-    const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-    return match ? decodeURIComponent(match[1]) : undefined;
 };
 
 const axiosInstance: AxiosInstance = axios.create({
@@ -56,7 +59,7 @@ axiosInstance.interceptors.request.use((config) => {
     const method = config.method?.toUpperCase();
 
     if (method && !SAFE_METHODS.has(method)) {
-        const csrfToken = getCookie("csrfToken");
+        const csrfToken = getCsrfToken();
         if (csrfToken) {
             config.headers.set("X-CSRF-Token", csrfToken);
         }
@@ -81,8 +84,15 @@ const shouldSkipRefresh = (url?: string) => {
 };
 
 axiosInstance.interceptors.response.use(
-    (response) => unwrapResponse(response) as unknown as typeof response,
+    (response) => {
+        captureCsrfToken(response.headers);
+        return unwrapResponse(response) as unknown as typeof response;
+    },
     async (error: AxiosError<{ error?: string; message?: string }>) => {
+        if (error.response?.headers) {
+            captureCsrfToken(error.response.headers);
+        }
+
         const originalRequest = error.config as (typeof error.config & RetriableConfig) | undefined;
 
         if (
