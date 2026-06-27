@@ -47,7 +47,9 @@ bash deploy/first-vps-deploy.sh
 
 ## GitHub secrets & variables
 
-Use the **same VPS SSH secrets** as the backend, with a different deploy path:
+Copy the **same deploy secrets** from the backend repo into this repo’s **production** environment (same as backend).
+
+**Settings → Environments → production → Environment secrets** (or repository secrets):
 
 | Setting | Value |
 |---------|--------|
@@ -58,9 +60,26 @@ Use the **same VPS SSH secrets** as the backend, with a different deploy path:
 | Secret `DEPLOY_PATH` | `/opt/city-airport-taxis-admin` |
 | Secret `DEPLOY_PORT_APP` | `3000` |
 | Secret `GHCR_TOKEN` | PAT with `read:packages` (same as backend) |
-| Variable `NEXT_PUBLIC_BACKEND_URL` | `https://api.city-airport-taxis.be/api` |
-| Variable `NEXT_PUBLIC_SITE_URL` | `https://admin.city-airport-taxis.be` |
-| Variable `NEXT_PUBLIC_SOCKET_PATH` | `/socket.io` (optional) |
+
+Optional **Variables** (defaults are already in the workflow):
+
+| Variable | Value |
+|----------|--------|
+| `NEXT_PUBLIC_BACKEND_URL` | `https://api.city-airport-taxis.be/api` |
+| `NEXT_PUBLIC_SITE_URL` | `https://admin.city-airport-taxis.be` |
+| `NEXT_PUBLIC_SOCKET_PATH` | `/socket.io` |
+
+**Fastest setup:** open the backend repo → Settings → Environments → production → copy each secret name/value into the admin repo’s production environment. Change only `DEPLOY_PATH` and `DEPLOY_PORT_APP`.
+
+Or run locally (after `gh auth login`):
+
+```bash
+cd dashboard
+cp deploy/github-actions.secrets.example deploy/github-actions.secrets
+# Fill DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY_FILE, GHCR_TOKEN only
+./deploy/set-github-actions-config.sh belgiumairporttransfers-creator/city-airport-taxis-admin
+gh variable set SSH_DEPLOY_ENABLED -R belgiumairporttransfers-creator/city-airport-taxis-admin -b "true"
+```
 
 ## Deploy
 

@@ -88,6 +88,8 @@ if [[ -n "${NEXT_PUBLIC_SOCKET_PATH:-}" ]]; then
   gh variable set NEXT_PUBLIC_SOCKET_PATH -R "$REPO" -b "$NEXT_PUBLIC_SOCKET_PATH"
 fi
 
+gh variable set SSH_DEPLOY_ENABLED -R "$REPO" -b "true"
+
 echo ""
 echo "Done. Secrets and variables are set on $REPO"
 echo "Push to main or re-run the Deploy workflow in GitHub Actions."
