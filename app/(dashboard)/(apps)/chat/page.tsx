@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, Fragment } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -49,6 +50,8 @@ type ReplyComposerState = {
 };
 
 const ChatPage = () => {
+  const searchParams = useSearchParams();
+  const conversationIdFromUrl = searchParams.get("conversationId");
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [showContactSidebar, setShowContactSidebar] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -117,6 +120,18 @@ const ChatPage = () => {
     conversationSearch,
     typingByConversation,
   ]);
+
+  useEffect(() => {
+    if (!conversationIdFromUrl) return;
+
+    const exists = contacts.some(
+      (contact) => contact.conversationId === conversationIdFromUrl
+    );
+
+    if (exists) {
+      setSelectedConversationId(conversationIdFromUrl);
+    }
+  }, [conversationIdFromUrl, contacts]);
 
   const selectedContact = contacts.find((c) => c.conversationId === selectedConversationId);
   const isPeerTyping = Boolean(
