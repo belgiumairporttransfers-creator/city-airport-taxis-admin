@@ -1,39 +1,53 @@
 "use client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Icon } from "@iconify/react";
-import {
-  type Contact as ContactType,
-  type Chat as ChatType,
-} from "./data";
+import { cn, formatTime } from "@/lib/utils";
+import MessageStatusTicks from "@/lib/chat/message-status-ticks";
+import { type Contact } from "@/lib/chat/types";
+import { getAvatarSrc } from "@/lib/chat/types";
 
 const ContactList = ({
   contact,
   openChat,
   selectedChatId,
+  currentUserId,
 }: {
-  contact: ContactType;
-  openChat: (id: any) => void;
-  selectedChatId: string | number | null;
+  contact: Contact;
+  openChat: () => void;
+  selectedChatId: string | null;
+  currentUserId?: string;
 }) => {
-  const { avatar, id, fullName, status, about, unreadmessage, date } = contact;
+  const {
+    avatar,
+    conversationId,
+    fullName,
+    status,
+    about,
+    unreadmessage,
+    date,
+    isTyping,
+    lastMessageStatus,
+    lastMessageSenderId,
+  } = contact;
+  const avatarSrc = getAvatarSrc(avatar);
+  const isOwnLastMessage = Boolean(
+    currentUserId && lastMessageSenderId && lastMessageSenderId === currentUserId
+  );
 
   return (
     <div
       className={cn(
         " gap-4 py-2 lg:py-2.5 px-3 border-l-2 border-transparent   hover:bg-default-200 cursor-pointer flex ",
         {
-          "lg:border-primary/70 lg:bg-default-200 ":
-            id === (selectedChatId as any),
+          "lg:border-primary/70 lg:bg-default-200 ": conversationId === selectedChatId,
         }
       )}
-      onClick={() => openChat(id)}
+      onClick={openChat}
     >
       <div className="flex-1 flex  gap-3 ">
         <div className="relative inline-block ">
           <Avatar>
-            <AvatarImage src={avatar.src} />
+            {avatarSrc ? <AvatarImage src={avatarSrc} alt={fullName} /> : null}
             <AvatarFallback className="uppercase">
               {fullName.slice(0, 2)}
             </AvatarFallback>
@@ -46,34 +60,29 @@ const ContactList = ({
         </div>
         <div className="block">
           <div className="truncate max-w-[120px]">
-            <span className="text-sm text-default-900 font-medium">
-              {" "}
-              {fullName}
-            </span>
+            <span className="text-sm text-default-900 font-medium">{fullName}</span>
           </div>
           <div className="truncate  max-w-[120px]">
-            <span className=" text-xs  text-default-600 ">{about}</span>
+            <span className=" text-xs  text-default-600 ">
+              {isTyping ? "Typing..." : about}
+            </span>
           </div>
         </div>
       </div>
-      <div className="flex-none  flex-col items-end  gap-2 hidden lg:flex">
+      <div className="flex-none flex-col items-end gap-1 hidden lg:flex">
         <span className="text-xs text-default-600 text-end uppercase">
-          {date}
+          {date ? formatTime(date) : ""}
         </span>
-        <span
-          className={cn(
-            "h-[14px] w-[14px] flex items-center justify-center bg-default-400 rounded-full text-primary-foreground text-[10px] font-medium",
-            {
-              "bg-primary/70": unreadmessage > 0,
-            }
-          )}
-        >
-          {unreadmessage === 0 ? (
-            <Icon icon="uil:check" className="text-sm" />
-          ) : (
-            unreadmessage
-          )}
-        </span>
+        {unreadmessage > 0 ? (
+          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary/70 px-1 text-[10px] font-medium text-primary-foreground">
+            {unreadmessage}
+          </span>
+        ) : isOwnLastMessage ? (
+          <MessageStatusTicks
+            variant="badge"
+            status={lastMessageStatus ?? "sent"}
+          />
+        ) : null}
       </div>
     </div>
   );

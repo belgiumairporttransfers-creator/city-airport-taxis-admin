@@ -1,77 +1,311 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Icon } from "@iconify/react";
-import { Annoyed, SendHorizontal } from "lucide-react";
+import { Annoyed, Mic, Paperclip, SendHorizontal, Square, X } from "lucide-react";
+import { emitStopTyping, emitTyping } from "@/lib/socket/communication-socket";
+import { cn } from "@/lib/utils";
+import ChatEmojiPicker from "@/lib/chat/chat-emoji-picker";
+import {
+  AttachmentSendPreview,
+  type PendingAttachment,
+} from "@/lib/chat/attachment-send-preview";
+import {
+  useSendMessage,
+  useUploadCommunicationAttachment,
+} from "@/hooks/queries/use-communication";
+import { formatVoiceDuration, useVoiceRecorder } from "@/hooks/use-voice-recorder";
+import toast from "react-hot-toast";
 
-import data from "@emoji-mart/data";
-import Picker from "@emoji-mart/react";
-import {
-  Tooltip,
-  TooltipArrow,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Label } from "@/components/ui/label";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+type MessageFormValues = {
+  message: string;
+};
+
+const composerIconButtonClass =
+  "shrink-0 rounded-full bg-default-200 hover:bg-default-300 h-9 w-9 p-0";
+const composerIconClass = "h-5 w-5 text-primary";
+
+const getAudioDuration = (file: File) =>
+  new Promise<number>((resolve) => {
+    const audio = document.createElement("audio");
+    const objectUrl = URL.createObjectURL(file);
+
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => {
+      const duration = Number.isFinite(audio.duration) ? Math.round(audio.duration) : 0;
+      URL.revokeObjectURL(objectUrl);
+      resolve(duration);
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(0);
+    };
+    audio.src = objectUrl;
+  });
+
 const MessageFooter = ({
   handleSendMessage,
   replay,
-  setReply,
   replayData,
+  onCancelReply,
+  conversationId,
+  replyToMessageId,
+  onMessageSent,
 }: {
   handleSendMessage: (message: string) => void;
   replay: boolean;
-  setReply: React.Dispatch<React.SetStateAction<boolean>>;
-  replayData: any;
+  replayData: { contact?: { fullName?: string }; message?: string };
+  onCancelReply: () => void;
+  conversationId?: string | null;
+  replyToMessageId?: string;
+  onMessageSent?: () => void;
 }) => {
-  const [message, setMessage] = useState("");
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
-    e.target.style.height = "auto"; // Reset the height to auto to adjust
-    e.target.style.height = `${e.target.scrollHeight - 15}px`;
+  const isTypingRef = useRef(false);
+  const stopTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingPreviewUrlRef = useRef<string | null>(null);
+  const [isSendingVoice, setIsSendingVoice] = useState(false);
+  const [isSendingFile, setIsSendingFile] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState<PendingAttachment | null>(null);
+
+  const sendMessageMutation = useSendMessage();
+  const uploadAttachmentMutation = useUploadCommunicationAttachment();
+  const {
+    isRecording,
+    isRequestingPermission,
+    duration,
+    error: recorderError,
+    startRecording,
+    stopRecording,
+    cancelRecording,
+    clearError,
+  } = useVoiceRecorder();
+
+  const form = useForm<MessageFormValues>({
+    defaultValues: { message: "" },
+  });
+
+  const message = form.watch("message");
+
+  const clearTyping = () => {
+    if (!conversationId || !isTypingRef.current) return;
+    emitStopTyping(conversationId);
+    isTypingRef.current = false;
   };
 
-  const handleSelectEmoji = (emoji: any) => {
-    setMessage(message + emoji.native);
+  const clearPendingAttachment = () => {
+    if (pendingPreviewUrlRef.current) {
+      URL.revokeObjectURL(pendingPreviewUrlRef.current);
+      pendingPreviewUrlRef.current = null;
+    }
+    setPendingAttachment(null);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    handleSendMessage(message);
-    setReply(false);
-    setMessage("");
+  useEffect(() => {
+    return () => {
+      if (stopTypingTimeoutRef.current) {
+        clearTimeout(stopTypingTimeoutRef.current);
+      }
+      clearTyping();
+      cancelRecording();
+      if (pendingPreviewUrlRef.current) {
+        URL.revokeObjectURL(pendingPreviewUrlRef.current);
+      }
+    };
+  }, [conversationId]);
 
-    console.log(replay, message, "ami k");
+  useEffect(() => {
+    form.reset({ message: "" });
+    cancelRecording();
+    clearPendingAttachment();
+  }, [conversationId, form]);
+
+  useEffect(() => {
+    if (!recorderError) return;
+    toast.error(recorderError);
+    clearError();
+  }, [recorderError, clearError]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+
+    if (!message.trim()) {
+      if (stopTypingTimeoutRef.current) {
+        clearTimeout(stopTypingTimeoutRef.current);
+      }
+      clearTyping();
+      return;
+    }
+
+    if (!isTypingRef.current) {
+      emitTyping(conversationId);
+      isTypingRef.current = true;
+    }
+
+    if (stopTypingTimeoutRef.current) {
+      clearTimeout(stopTypingTimeoutRef.current);
+    }
+
+    stopTypingTimeoutRef.current = setTimeout(() => {
+      clearTyping();
+    }, 2500);
+  }, [message, conversationId]);
+
+  const handleSelectEmoji = (emoji: { native: string }) => {
+    form.setValue("message", `${form.getValues("message")}${emoji.native}`, {
+      shouldDirty: true,
+    });
   };
+
+  const onSubmit = (values: MessageFormValues) => {
+    const trimmed = values.message.trim();
+    if (!trimmed) return;
+
+    clearTyping();
+    handleSendMessage(trimmed);
+    form.reset({ message: "" });
+  };
+
+  const sendVoiceFile = async (file: File, recordedDuration?: number) => {
+    if (!conversationId || isSendingVoice) return;
+
+    setIsSendingVoice(true);
+
+    try {
+      const audioDuration = recordedDuration ?? (await getAudioDuration(file));
+      const attachment = await uploadAttachmentMutation.mutateAsync({
+        conversationId,
+        file,
+        kind: "voice",
+        duration: audioDuration || undefined,
+      });
+
+      if (!attachment?.id) {
+        throw new Error("Voice upload failed.");
+      }
+
+      await sendMessageMutation.mutateAsync({
+        conversationId,
+        type: "voice",
+        attachmentId: attachment.id,
+        replyToMessageId,
+      });
+
+      onMessageSent?.();
+    } catch (error) {
+      const messageText =
+        error instanceof Error ? error.message : "Failed to send voice message.";
+      toast.error(messageText);
+    } finally {
+      setIsSendingVoice(false);
+    }
+  };
+
+  const handleMicClick = () => {
+    if (isSendingVoice) return;
+
+    if (isRecording) {
+      void (async () => {
+        const file = await stopRecording();
+        if (file) {
+          await sendVoiceFile(file, duration);
+        }
+      })();
+      return;
+    }
+
+    void startRecording();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !conversationId || isSendingFile || pendingAttachment) return;
+
+    const isImage = file.type.startsWith("image/");
+    const previewUrl = URL.createObjectURL(file);
+
+    if (pendingPreviewUrlRef.current) {
+      URL.revokeObjectURL(pendingPreviewUrlRef.current);
+    }
+
+    pendingPreviewUrlRef.current = previewUrl;
+    setPendingAttachment({
+      file,
+      previewUrl,
+      kind: isImage ? "image" : "document",
+    });
+  };
+
+  const handleSendPendingAttachment = async () => {
+    if (!pendingAttachment || !conversationId || isSendingFile) return;
+
+    const { file, kind } = pendingAttachment;
+    const messageType = kind === "image" ? "image" : "document";
+
+    setIsSendingFile(true);
+
+    try {
+      const attachment = await uploadAttachmentMutation.mutateAsync({
+        conversationId,
+        file,
+        kind,
+      });
+
+      if (!attachment?.id) {
+        throw new Error("File upload failed.");
+      }
+
+      await sendMessageMutation.mutateAsync({
+        conversationId,
+        type: messageType,
+        attachmentId: attachment.id,
+        replyToMessageId,
+      });
+
+      clearPendingAttachment();
+      onMessageSent?.();
+    } catch (error) {
+      const messageText =
+        error instanceof Error ? error.message : "Failed to send file.";
+      toast.error(messageText);
+    } finally {
+      setIsSendingFile(false);
+    }
+  };
+
+  const isComposerBusy =
+    isRecording || isSendingVoice || isSendingFile || isRequestingPermission;
+
   return (
     <>
+      <AttachmentSendPreview
+        pending={pendingAttachment}
+        isSending={isSendingFile}
+        onClose={clearPendingAttachment}
+        onSend={() => {
+          void handleSendPendingAttachment();
+        }}
+      />
+
       {replay && (
-        <div className=" w-full px-6 py-4 flex justify-between gap-4 items-center">
-          <div>
-            <div className="font-semibold text-base text-default-700 mb-1">
-              Replying to {replayData?.contact?.fullName}
+        <div className="flex w-full items-center justify-between gap-4 border-t border-border px-6 py-3">
+          <div className="min-w-0 flex-1 rounded-sm border-l-4 border-primary bg-default-200 py-1.5 pl-3 pr-2">
+            <div className="text-xs font-semibold text-primary">
+              {replayData?.contact?.fullName}
             </div>
-            <div className="truncate">
-              <span className="text-sm text-muted-foreground">
-                {replayData?.message}
-              </span>
-            </div>
+            <div className="truncate text-xs text-default-600">{replayData?.message}</div>
           </div>
-          <span className="cursor-pointer " onClick={() => setReply(false)}>
+          <span className="cursor-pointer shrink-0" onClick={onCancelReply}>
             <Icon
               icon="heroicons:x-mark-20-solid"
               className="text-2xl text-default-900"
@@ -80,185 +314,133 @@ const MessageFooter = ({
         </div>
       )}
 
-      <div
-        className="w-full flex items-end gap-1 lg:gap-4 lg:px-4 relative px-2 "
-        style={{
-          boxSizing: "border-box",
-        }}
-      >
-        <div className="flex-none flex gap-1 absolute md:static top-0 left-1.5 z-10 ">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        size="icon"
-                        className="bg-transparent rounded-full hover:bg-default-50"
-                      >
-                        <span className="h-6 w-6 rounded-full bg-primary">
-                          <Icon
-                            icon="mdi:plus"
-                            className="text-2xl text-primary-foreground "
-                          />
-                        </span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" align="start">
-                      <p>Open More Actions </p>
-                      <TooltipArrow className="fill-primary" />
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="w-[196px] p-2.5 rounded-xl"
-              align="start"
-              side="top"
+      {isRecording ? (
+        <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2 lg:px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive/70 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-destructive" />
+            </span>
+            <span className="text-sm font-medium text-default-900">Recording</span>
+            <span className="text-sm text-default-500">{formatVoiceDuration(duration)}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 rounded-full"
+              onClick={cancelRecording}
+              disabled={isSendingVoice}
             >
-              <DropdownMenuItem className="py-2 px-2 rounded-xl">
-                <div className="flex items-center gap-1">
-                  <Icon
-                    icon="material-symbols:mic"
-                    className="text-xl text-primary"
-                  />
-                  <span className="text-sm font-medium text-default-900">
-                    Send a voice clip
-                  </span>
-                </div>
-              </DropdownMenuItem>
-              {message.length > 0 && (
-                <>
-                  <DropdownMenuItem className="py-2 px-2 rounded-xl">
-                    <Label htmlFor="attachement" className="flex items-center">
-                      <Icon
-                        icon="tabler:file-filled"
-                        className="text-xl text-primary "
-                      />
-                      <Input type="file" className="hidden" id="attachement" />
-                      <span className="text-sm font-medium text-defualt-900 inline-block ml-1">
-                        Attach a file
-                      </span>
-                    </Label>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="py-2 px-2 rounded-xl">
-                    <div className="flex items-center gap-1">
-                      <Icon
-                        icon="fluent:sticker-12-filled"
-                        className="text-xl text-primary"
-                      />
-                      <span className="text-sm font-medium text-defualt-900 inline-block ml-1">
-                        Choose a sticker
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
-                </>
+              <X className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              className="h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={handleMicClick}
+              disabled={isSendingVoice || isRequestingPermission}
+            >
+              {isSendingVoice || isRequestingPermission ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+              ) : (
+                <Square className="h-3.5 w-3.5 fill-current" />
               )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {message.length < 1 && (
-            <>
-              <div className="hidden lg:block">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Label htmlFor="attachement">
-                        <span className="h-10 w-10 rounded-full hover:bg-default-50 flex justify-center items-center ">
-                          <Icon
-                            icon="tabler:file-filled"
-                            className="text-2xl text-primary/80 "
-                          />
-                        </span>
-                        <Input
-                          type="file"
-                          className="hidden"
-                          id="attachement"
-                        />
-                      </Label>
-                    </TooltipTrigger>
-                    <TooltipContent align="start">
-                      <p>Attach a file</p>
-                      <TooltipArrow className="fill-primary" />
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="hidden lg:block">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        size="icon"
-                        className="bg-transparent rounded-full hover:bg-default-50 cursor-pointer"
-                      >
-                        <Icon
-                          icon="fluent:sticker-12-filled"
-                          className="text-2xl text-primary/80"
-                        />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent align="start">
-                      <p> Choose a sticker </p>
-                      <TooltipArrow className="fill-primary" />
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </>
-          )}
+            </Button>
+          </div>
         </div>
-        <div className="flex-1">
-          <form onSubmit={handleSubmit}>
-            <div className="flex  gap-1 relative">
-              <textarea
-                value={message}
-                onChange={handleChange}
-                placeholder="Type your message..."
-                className="bg-background border border-border outline-hidden focus:border-primary  rounded-xl break-words pl-8  md:pl-3 px-3 flex-1 h-10 pt-2 p-1 pr-8 no-scrollbar "
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit(e as any);
-                  }
-                }}
-                style={{
-                  minHeight: "40px",
-                  maxHeight: "120px",
-                  overflowY: "auto",
-                  resize: "none",
-                }}
+      ) : null}
+
+      <div className="w-full px-2 lg:px-4">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                size="icon"
+                className={composerIconButtonClass}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isComposerBusy}
+              >
+                {isSendingFile ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                ) : (
+                  <Paperclip className={composerIconClass} />
+                )}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept="image/*,.pdf,.doc,.docx,.txt"
+                onChange={handleFileChange}
               />
+
+              <Button
+                type="button"
+                size="icon"
+                className={cn(
+                  composerIconButtonClass,
+                  isRecording && "bg-destructive/15 hover:bg-destructive/20"
+                )}
+                onClick={handleMicClick}
+                disabled={isSendingVoice || isRequestingPermission}
+              >
+                {isSendingVoice || isRequestingPermission ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                ) : (
+                  <Mic className={cn(composerIconClass, isRecording && "text-destructive")} />
+                )}
+              </Button>
+
+              <div className="min-w-0 flex-1">
+                <Input
+                  name="message"
+                  type="textarea"
+                  placeholder="Type your message..."
+                  rows={1}
+                  disabled={isComposerBusy}
+                  className="mb-0 [&_[data-slot=form-item]]:mb-0"
+                  inputClassName="!min-h-9 !max-h-24 !h-9 resize-none !py-0 !pt-0 !pb-0 !px-3 text-sm leading-9 2xl:!min-h-9 2xl:!text-sm 2xl:!leading-9 no-scrollbar"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                      event.preventDefault();
+                      void form.handleSubmit(onSubmit)();
+                    }
+                  }}
+                />
+              </div>
 
               <Popover>
                 <PopoverTrigger asChild>
-                  <span className="absolute ltr:right-12 rtl:left-12 bottom-1.5 h-7 w-7 rounded-full cursor-pointer  ">
-                    <Annoyed className="w-6 h-6 text-primary" />
-                  </span>
+                  <Button
+                    type="button"
+                    size="icon"
+                    className={composerIconButtonClass}
+                    disabled={isComposerBusy}
+                  >
+                    <Annoyed className={composerIconClass} />
+                  </Button>
                 </PopoverTrigger>
                 <PopoverContent
                   side="top"
-                  className="w-fit p-0 shadow-none border-none bottom-0 rtl:left-5 ltr:-left-[110px]"
+                  className="w-fit p-0 shadow-none border-none"
                 >
-                  <Picker
-                    data={data}
-                    onEmojiSelect={handleSelectEmoji}
-                    theme="light"
-                  />
+                  <ChatEmojiPicker onEmojiSelect={handleSelectEmoji} />
                 </PopoverContent>
               </Popover>
+
               <Button
                 type="submit"
-                className="rounded-full bg-default-200 hover:bg-default-300 h-[42px] w-[42px] p-0 self-end"
+                className={composerIconButtonClass}
+                disabled={isComposerBusy}
               >
-                <SendHorizontal className="w-5 h-8 text-primary rtl:rotate-180" />
+                <SendHorizontal className={cn(composerIconClass, "rtl:rotate-180")} />
               </Button>
             </div>
           </form>
-        </div>
+        </Form>
       </div>
     </>
   );

@@ -11,78 +11,88 @@ import { Badge } from "@/components/ui/badge";
 import { DialogClose } from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import Image from "next/image";
+import { Icon } from "@iconify/react";
+import { Pin } from "lucide-react";
+import type { PinnedMessage } from "@/lib/chat/types";
 
 const PinnedMessages = ({
   pinnedMessages,
   handleUnpinMessage,
 }: {
-  pinnedMessages: any;
-  handleUnpinMessage: (id: string) => void;
+  pinnedMessages: PinnedMessage[];
+  handleUnpinMessage: (message: PinnedMessage) => void;
 }) => {
+  if (pinnedMessages.length === 0) return null;
+
+  const latestPinned = pinnedMessages[pinnedMessages.length - 1];
+
   return (
-    <>
-      {pinnedMessages.length > 0 && (
-        <div>
-          {pinnedMessages.map((msg: any, i: number) => (
-            <div key={i} className=" flex justify-center items-center gap-1">
-              <p className="text-center text-xs text-default-700 mb-1">
-                You {msg?.isPinned ? "unpinned" : "pinned"} a message.
-              </p>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <span className="text-xs font-medium text-primary cursor-pointer inline-block mb-1 hover:underline">
-                    See All
-                  </span>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle className="text-center mt-2">
-                      Pinned messages
-                    </DialogTitle>
-                  </DialogHeader>
-                  <DialogDescription className="max-h-[400px]">
-                    <ScrollArea className="h-full">
-                      {pinnedMessages.map(
-                        (pinnedMessage: any, index: number) => (
-                          <div
-                            key={index}
-                            className="flex items-center  gap-3 border-b last:border-none border-default-100 py-4"
-                          >
-                            <div className="h-10 w-10 self-end">
-                              <Image
-                                src={pinnedMessage.avatar}
-                                alt=""
-                                className="w-full h-full rounded-full object-cover"
-                              />
-                            </div>
-                            <span className="flex-1 ">
-                              {pinnedMessage.note}
-                            </span>
-                            <Badge
-                              variant="outline"
-                              className="px-4 h-7 cursor-pointer self-end"
-                              onClick={() => handleUnpinMessage(pinnedMessage)}
-                            >
-                              Unpin
-                            </Badge>
-                          </div>
-                        )
-                      )}
-                    </ScrollArea>
-                  </DialogDescription>
-                  <DialogFooter className="sm:justify-center">
-                    <DialogClose asChild>
-                      <Button className="rounded-full">Close</Button>
-                    </DialogClose>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-          ))}
-        </div>
-      )}
-    </>
+    <div className="flex-none border-b border-border bg-default-100/90 px-4 py-2.5">
+      <div className="flex items-center gap-3">
+        <Pin className="h-3.5 w-3.5 shrink-0 rotate-45 fill-primary text-primary" />
+
+        {pinnedMessages.length === 1 ? (
+          <p className="min-w-0 flex-1 truncate text-sm text-default-700">
+            {latestPinned.note}
+          </p>
+        ) : (
+          <Dialog>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                className="min-w-0 flex-1 truncate text-left text-sm text-default-700 hover:text-default-900"
+              >
+                {latestPinned.note}
+                <span className="ml-1 text-xs text-primary">
+                  +{pinnedMessages.length - 1} more
+                </span>
+              </button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="mt-2 text-center">Pinned messages</DialogTitle>
+              </DialogHeader>
+              <DialogDescription className="max-h-[400px]">
+                <ScrollArea className="h-full max-h-[360px]">
+                  {pinnedMessages.map((pinnedMessage, index) => (
+                    <div
+                      key={`${pinnedMessage.messageId ?? index}-${index}`}
+                      className="flex items-center gap-3 border-b border-default-100 py-4 last:border-none"
+                    >
+                      <Pin className="h-3.5 w-3.5 shrink-0 rotate-45 fill-primary text-primary" />
+                      <span className="flex-1 text-sm text-default-700">
+                        {pinnedMessage.note}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="h-7 shrink-0 cursor-pointer self-end px-4"
+                        onClick={() => handleUnpinMessage(pinnedMessage)}
+                      >
+                        Unpin
+                      </Badge>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </DialogDescription>
+              <DialogFooter className="sm:justify-center">
+                <DialogClose asChild>
+                  <Button className="rounded-full">Close</Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        <button
+          type="button"
+          aria-label="Unpin message"
+          onClick={() => handleUnpinMessage(latestPinned)}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-default-400 transition-colors hover:bg-default-200 hover:text-default-700"
+        >
+          <Icon icon="heroicons:x-mark-20-solid" className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
   );
 };
 

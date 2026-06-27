@@ -20,6 +20,7 @@ const API_ROUTES = {
     VEHICLES: "/admin/vehicles",
     DRIVERS: "/admin/drivers",
     NOTIFICATIONS: "/admin/notifications",
+    COMMUNICATION: "/admin/communication",
     UPLOAD: "/upload",
 };
 

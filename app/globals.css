@@ -275,6 +275,28 @@ html body[data-scroll-locked] .right-scroll-bar-position {
   scrollbar-color: rgba(128, 128, 128, 0.2) transparent;
 }
 
+.chat-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--primary-300);
+  border-radius: 9999px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--primary-500);
+}
+
+.chat-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-400) transparent;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   width: 0;
 }

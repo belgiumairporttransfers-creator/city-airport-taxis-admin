@@ -18,11 +18,13 @@ import ChangeTheme from "./change-theme";
 import BlockUser from "./block-user";
 import MediaSheet from "./media-sheet";
 import { AlertTriangle, FolderClosed, Image } from "lucide-react";
-import { type Contact as ContactType } from "../data";
+import type { Contact } from "@/lib/chat/types";
+import { getAvatarSrc } from "@/lib/chat/types";
+
 const ContactInfo = ({ handleSetIsOpenSearch, handleShowInfo, contact }: {
   handleSetIsOpenSearch: () => void;
   handleShowInfo: () => void;
-  contact?: ContactType
+  contact?: Contact
 }) => {
   const [showDrawer, setShowDrawer] = useState(null);
   const handleDrawer = (itemKey: any) => {
@@ -47,7 +49,7 @@ const ContactInfo = ({ handleSetIsOpenSearch, handleShowInfo, contact }: {
           </div>
           <div className="flex flex-col items-center">
             <Avatar className="w-16 h-16 lg:h-24 lg:w-24">
-              <AvatarImage src={contact?.avatar.src} alt="" />
+              <AvatarImage src={getAvatarSrc(contact?.avatar)} alt="" />
               <AvatarFallback>{contact?.fullName.slice(0, 2)}</AvatarFallback>
             </Avatar>
             <div className="mt-3 text-lg lg:text-xl font-semibold text-default-900">

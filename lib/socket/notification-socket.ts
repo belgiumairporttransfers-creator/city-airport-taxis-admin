@@ -1,45 +1,9 @@
-import { io, type Socket } from "socket.io-client";
 import type { Notification } from "@/lib/schemas";
+import { connectAppSocket, disconnectAppSocket, getAppSocket } from "@/lib/socket/client";
 
-const getSocketBaseUrl = () => {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
-  return backendUrl.replace(/\/api\/?$/, "");
-};
-
-const SOCKET_PATH = process.env.NEXT_PUBLIC_SOCKET_PATH || "/socket.io";
-
-let socket: Socket | null = null;
-
-export const getNotificationSocket = (): Socket | null => {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  if (!socket) {
-    socket = io(getSocketBaseUrl(), {
-      path: SOCKET_PATH,
-      withCredentials: true,
-      transports: ["websocket", "polling"],
-      autoConnect: false,
-    });
-  }
-
-  return socket;
-};
-
-export const connectNotificationSocket = (): Socket | null => {
-  const client = getNotificationSocket();
-  if (client && !client.connected) {
-    client.connect();
-  }
-  return client;
-};
-
-export const disconnectNotificationSocket = () => {
-  if (socket?.connected) {
-    socket.disconnect();
-  }
-};
+export const getNotificationSocket = getAppSocket;
+export const connectNotificationSocket = connectAppSocket;
+export const disconnectNotificationSocket = disconnectAppSocket;
 
 export type NotificationSocketHandlers = {
   onNew?: (notification: Notification) => void;
