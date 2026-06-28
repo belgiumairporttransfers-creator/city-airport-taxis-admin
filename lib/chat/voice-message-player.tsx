@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play } from "lucide-react";
+import { Mic, Pause, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatVoiceDuration } from "@/hooks/use-voice-recorder";
 
@@ -10,6 +10,40 @@ type VoiceMessagePlayerProps = {
   duration?: number;
   isOwnMessage?: boolean;
 };
+
+const VoiceWaveform = ({
+  progress,
+  isOwnMessage,
+  barCount = 32,
+}: {
+  progress: number;
+  isOwnMessage: boolean;
+  barCount?: number;
+}) => (
+  <div className="flex min-w-0 flex-1 items-center gap-[2px] overflow-hidden">
+    {Array.from({ length: barCount }).map((_, index) => {
+      const height = 5 + ((index * 4 + 5) % 14);
+      const filled = index / barCount <= progress;
+
+      return (
+        <span
+          key={index}
+          className={cn(
+            "w-[2px] shrink-0 rounded-full transition-colors duration-150",
+            filled
+              ? isOwnMessage
+                ? "bg-primary"
+                : "bg-default-600"
+              : isOwnMessage
+                ? "bg-primary/30"
+                : "bg-default-400/70"
+          )}
+          style={{ height: `${height}px` }}
+        />
+      );
+    })}
+  </div>
+);
 
 const VoiceMessagePlayer = ({ url, duration, isOwnMessage = false }: VoiceMessagePlayerProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -24,8 +58,7 @@ const VoiceMessagePlayer = ({ url, duration, isOwnMessage = false }: VoiceMessag
   }, [url, duration]);
 
   const totalDuration = loadedDuration || duration || 0;
-  const progress =
-    totalDuration > 0 ? Math.min(100, (currentTime / totalDuration) * 100) : 0;
+  const progress = totalDuration > 0 ? Math.min(1, currentTime / totalDuration) : 0;
 
   const togglePlayback = () => {
     const audio = audioRef.current;
@@ -40,29 +73,36 @@ const VoiceMessagePlayer = ({ url, duration, isOwnMessage = false }: VoiceMessag
   };
 
   return (
-    <div className="flex min-w-[210px] items-center gap-2 py-0.5">
+    <div className="flex min-w-[220px] max-w-full items-center gap-2.5 py-0.5 sm:min-w-[240px]">
       <button
         type="button"
         onClick={togglePlayback}
         className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-          isOwnMessage ? "bg-primary/15 text-primary" : "bg-default-300 text-default-700"
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-sm",
+          isOwnMessage
+            ? "bg-primary text-primary-foreground"
+            : "bg-default-300 text-default-700"
         )}
         aria-label={isPlaying ? "Pause voice message" : "Play voice message"}
       >
-        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 pl-0.5" />}
+        {isPlaying ? (
+          <Pause className="h-4 w-4" />
+        ) : (
+          <Play className="h-4 w-4 pl-0.5" />
+        )}
       </button>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="h-1.5 overflow-hidden rounded-full bg-default-300/80">
-          <div
-            className={cn("h-full rounded-full transition-all", isOwnMessage ? "bg-primary" : "bg-default-600")}
-            style={{ width: `${progress}%` }}
-          />
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <VoiceWaveform progress={progress} isOwnMessage={isOwnMessage} />
+        <div className="flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-1 text-[10px] leading-none text-default-500">
+            <Mic className="h-3 w-3" />
+            Voice
+          </span>
+          <span className="text-[11px] font-medium tabular-nums leading-none text-default-600">
+            {formatVoiceDuration(isPlaying ? Math.floor(currentTime) : totalDuration)}
+          </span>
         </div>
-        <span className="text-[10px] leading-none text-default-500">
-          {formatVoiceDuration(isPlaying ? currentTime : totalDuration)}
-        </span>
       </div>
 
       <audio

@@ -11,11 +11,7 @@ const uploadFileToApi = async (file: File, folder: string): Promise<UploadRespon
   formData.append("file", file);
   formData.append("folder", folder);
 
-  const data = await api.post<UploadResponse>(`${API_ROUTES.UPLOAD}/upload`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const data = await api.post<UploadResponse>(`${API_ROUTES.UPLOAD}/upload`, formData);
 
   if (!data?.url) {
     throw new Error("Upload failed");

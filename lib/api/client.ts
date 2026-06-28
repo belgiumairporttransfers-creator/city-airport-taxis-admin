@@ -58,6 +58,10 @@ const unwrapResponse = <T>(response: AxiosResponse): T | undefined => {
 axiosInstance.interceptors.request.use((config) => {
     const method = config.method?.toUpperCase();
 
+    if (config.data instanceof FormData) {
+        config.headers.delete("Content-Type");
+    }
+
     if (method && !SAFE_METHODS.has(method)) {
         const csrfToken = getCsrfToken();
         if (csrfToken) {

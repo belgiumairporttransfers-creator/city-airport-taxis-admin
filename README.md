@@ -16,4 +16,9 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Production deploy
 
-Push to `main` → GitHub Actions auto-deploys. One-time setup: `backend/deploy/configure-all-repos.sh` (requires `gh auth login` and `backend/deploy/github-actions.secrets`).
+On the VPS:
+
+```bash
+cd /opt/city-airport-taxis-admin
+./deploy/docker-deploy.sh
+```

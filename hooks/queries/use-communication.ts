@@ -28,6 +28,7 @@ import {
 } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/lib/chat/get-api-error-message";
 
 export const CONVERSATIONS_QUERY_KEY = ["communication", "conversations"] as const;
 export const MESSAGES_QUERY_KEY = ["communication", "messages"] as const;
@@ -116,9 +117,13 @@ export const useSendMessage = () => {
           payload.optimisticSender
         );
 
-        queryClient.setQueryData<MessagesResponse | null>(queryKey, {
-          ...previous,
-          items: [...previous.items, optimistic as CommunicationMessage],
+        queryClient.setQueryData<MessagesResponse | null>(queryKey, (old) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            items: [...old.items, optimistic as CommunicationMessage],
+          };
         });
       }
 
@@ -150,7 +155,7 @@ export const useSendMessage = () => {
       if (context?.previous !== undefined && context?.queryKey) {
         queryClient.setQueryData(context.queryKey, context.previous);
       }
-      toast.error(error?.message || "Failed to send message.");
+      toast.error(getApiErrorMessage(error, "Failed to send message."));
     },
   });
 };
@@ -158,6 +163,9 @@ export const useSendMessage = () => {
 export const useUploadCommunicationAttachment = () => {
   return useMutation({
     mutationFn: uploadCommunicationAttachment,
+    onError: (error: ApiError) => {
+      toast.error(getApiErrorMessage(error, "Failed to upload attachment."));
+    },
   });
 };
 

@@ -165,7 +165,11 @@ const createMediaRecorder = (stream: MediaStream) => {
   return new MediaRecorder(stream);
 };
 
-export const useVoiceRecorder = () => {
+export type UseVoiceRecorderOptions = {
+  onRecordingComplete?: (result: VoiceRecordingResult) => void;
+};
+
+export const useVoiceRecorder = (options: UseVoiceRecorderOptions = {}) => {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -179,6 +183,11 @@ export const useVoiceRecorder = () => {
   const durationRef = useRef(0);
   const startedAtRef = useRef<number | null>(null);
   const stopRecordingRef = useRef<(() => Promise<VoiceRecordingResult | null>) | null>(null);
+  const onRecordingCompleteRef = useRef(options.onRecordingComplete);
+
+  useEffect(() => {
+    onRecordingCompleteRef.current = options.onRecordingComplete;
+  }, [options.onRecordingComplete]);
 
   const cleanupStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -232,7 +241,11 @@ export const useVoiceRecorder = () => {
           durationRef.current = next;
 
           if (next >= MAX_RECORDING_SECONDS) {
-            void stopRecordingRef.current?.();
+            void stopRecordingRef.current?.().then((result) => {
+              if (result) {
+                onRecordingCompleteRef.current?.(result);
+              }
+            });
           }
 
           return next;
@@ -263,7 +276,7 @@ export const useVoiceRecorder = () => {
 
     return new Promise((resolve) => {
       recorder.onstop = () => {
-        const mimeType = mimeTypeRef.current;
+        const mimeType = mimeTypeRef.current || "audio/webm";
         const blob = new Blob(chunksRef.current, { type: mimeType });
         cleanupStream();
         setIsRecording(false);

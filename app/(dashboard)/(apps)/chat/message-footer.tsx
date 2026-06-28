@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Icon } from "@iconify/react";
-import { Annoyed, Mic, Paperclip, SendHorizontal, Square, Trash2 } from "lucide-react";
+import { Annoyed, Mic, Paperclip, SendHorizontal } from "lucide-react";
 import { emitStopTyping, emitTyping } from "@/lib/socket/communication-socket";
 import { cn } from "@/lib/utils";
 import ChatEmojiPicker from "@/lib/chat/chat-emoji-picker";
@@ -17,7 +17,12 @@ import {
   useUploadCommunicationAttachment,
 } from "@/hooks/queries/use-communication";
 import type { OptimisticSender } from "@/lib/chat/optimistic-message";
-import { formatVoiceDuration, useVoiceRecorder } from "@/hooks/use-voice-recorder";
+import {
+  VoiceRecordPreview,
+  VoiceRecordingBar,
+  type PendingVoiceRecording,
+} from "@/lib/chat/voice-record-preview";
+import { useVoiceRecorder, type VoiceRecordingResult } from "@/hooks/use-voice-recorder";
 import toast from "react-hot-toast";
 
 import {
@@ -77,12 +82,29 @@ const MessageFooter = ({
   const stopTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingPreviewUrlRef = useRef<string | null>(null);
+  const pendingVoiceUrlRef = useRef<string | null>(null);
   const [isSendingVoice, setIsSendingVoice] = useState(false);
+  const [isStoppingRecording, setIsStoppingRecording] = useState(false);
   const [isSendingFile, setIsSendingFile] = useState(false);
   const [pendingAttachment, setPendingAttachment] = useState<PendingAttachment | null>(null);
+  const [pendingVoice, setPendingVoice] = useState<PendingVoiceRecording | null>(null);
 
   const sendMessageMutation = useSendMessage();
   const uploadAttachmentMutation = useUploadCommunicationAttachment();
+  const applyPendingVoice = (recording: VoiceRecordingResult) => {
+    if (pendingVoiceUrlRef.current) {
+      URL.revokeObjectURL(pendingVoiceUrlRef.current);
+    }
+
+    const previewUrl = URL.createObjectURL(recording.file);
+    pendingVoiceUrlRef.current = previewUrl;
+    setPendingVoice({
+      file: recording.file,
+      previewUrl,
+      duration: recording.duration,
+    });
+  };
+
   const {
     isRecording,
     isRequestingPermission,
@@ -92,7 +114,9 @@ const MessageFooter = ({
     stopRecording,
     cancelRecording,
     clearError,
-  } = useVoiceRecorder();
+  } = useVoiceRecorder({
+    onRecordingComplete: applyPendingVoice,
+  });
 
   const form = useForm<MessageFormValues>({
     defaultValues: { message: "" },
@@ -104,6 +128,14 @@ const MessageFooter = ({
     if (!conversationId || !isTypingRef.current) return;
     emitStopTyping(conversationId);
     isTypingRef.current = false;
+  };
+
+  const clearPendingVoice = () => {
+    if (pendingVoiceUrlRef.current) {
+      URL.revokeObjectURL(pendingVoiceUrlRef.current);
+      pendingVoiceUrlRef.current = null;
+    }
+    setPendingVoice(null);
   };
 
   const clearPendingAttachment = () => {
@@ -121,6 +153,7 @@ const MessageFooter = ({
       }
       clearTyping();
       cancelRecording();
+      clearPendingVoice();
       if (pendingPreviewUrlRef.current) {
         URL.revokeObjectURL(pendingPreviewUrlRef.current);
       }
@@ -131,6 +164,7 @@ const MessageFooter = ({
     form.reset({ message: "" });
     cancelRecording();
     clearPendingAttachment();
+    clearPendingVoice();
   }, [conversationId, form]);
 
   useEffect(() => {
@@ -194,7 +228,8 @@ const MessageFooter = ({
       });
 
       if (!attachment?.id) {
-        throw new Error("Voice upload failed.");
+        toast.error("Voice upload failed. Please try again.");
+        return;
       }
 
       await sendMessageMutation.mutateAsync({
@@ -205,30 +240,41 @@ const MessageFooter = ({
         optimisticSender,
       });
 
+      clearPendingVoice();
       onMessageSent?.();
-    } catch (error) {
-      const messageText =
-        error instanceof Error ? error.message : "Failed to send voice message.";
-      toast.error(messageText);
     } finally {
       setIsSendingVoice(false);
     }
   };
 
-  const handleMicClick = () => {
-    if (isSendingVoice) return;
+  const handleStopRecording = () => {
+    if (isStoppingRecording || isSendingVoice) return;
 
-    if (isRecording) {
-      void (async () => {
+    setIsStoppingRecording(true);
+    void (async () => {
+      try {
         const recording = await stopRecording();
-        if (recording) {
-          await sendVoiceFile(recording.file, recording.duration);
-        }
-      })();
-      return;
-    }
+        if (!recording) return;
+        applyPendingVoice(recording);
+      } finally {
+        setIsStoppingRecording(false);
+      }
+    })();
+  };
 
+  const handleMicClick = () => {
+    if (isSendingVoice || isStoppingRecording || pendingVoice) return;
     void startRecording();
+  };
+
+  const handleSendPendingVoice = () => {
+    if (!pendingVoice) return;
+    void sendVoiceFile(pendingVoice.file, pendingVoice.duration);
+  };
+
+  const handleCancelRecording = () => {
+    cancelRecording();
+    clearPendingVoice();
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -267,7 +313,8 @@ const MessageFooter = ({
       });
 
       if (!attachment?.id) {
-        throw new Error("File upload failed.");
+        toast.error("File upload failed.");
+        return;
       }
 
       await sendMessageMutation.mutateAsync({
@@ -280,17 +327,18 @@ const MessageFooter = ({
 
       clearPendingAttachment();
       onMessageSent?.();
-    } catch (error) {
-      const messageText =
-        error instanceof Error ? error.message : "Failed to send file.";
-      toast.error(messageText);
     } finally {
       setIsSendingFile(false);
     }
   };
 
   const isComposerBusy =
-    isRecording || isSendingVoice || isSendingFile || isRequestingPermission;
+    isRecording ||
+    isStoppingRecording ||
+    Boolean(pendingVoice) ||
+    isSendingVoice ||
+    isSendingFile ||
+    isRequestingPermission;
 
   return (
     <>
@@ -321,57 +369,19 @@ const MessageFooter = ({
       )}
 
       {isRecording ? (
-        <div className="flex w-full items-center gap-2 border-t border-border px-2 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-9 w-9 shrink-0 rounded-full text-default-500 hover:bg-destructive/10 hover:text-destructive"
-            onClick={cancelRecording}
-            disabled={isSendingVoice}
-            aria-label="Cancel recording"
-          >
-            <Trash2 className="h-[18px] w-[18px]" />
-          </Button>
-
-          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <span className="relative flex h-2.5 w-2.5 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive/70 opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-destructive" />
-            </span>
-            <span className="shrink-0 text-sm font-medium tabular-nums text-default-900">
-              {formatVoiceDuration(duration)}
-            </span>
-            <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden px-1">
-              {Array.from({ length: 24 }).map((_, index) => (
-                <span
-                  key={index}
-                  className="w-0.5 shrink-0 rounded-full bg-primary/50"
-                  style={{
-                    height: `${10 + ((index * 7) % 14)}px`,
-                    animation: "pulse 1s ease-in-out infinite",
-                    animationDelay: `${(index % 6) * 120}ms`,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            size="icon"
-            className="h-9 w-9 shrink-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={handleMicClick}
-            disabled={isSendingVoice || isRequestingPermission}
-            aria-label="Stop and send voice message"
-          >
-            {isSendingVoice || isRequestingPermission ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-            ) : (
-              <Square className="h-3.5 w-3.5 fill-current" />
-            )}
-          </Button>
-        </div>
+        <VoiceRecordingBar
+          duration={duration}
+          isStopping={isStoppingRecording}
+          onCancel={handleCancelRecording}
+          onStop={handleStopRecording}
+        />
+      ) : pendingVoice ? (
+        <VoiceRecordPreview
+          pending={pendingVoice}
+          isSending={isSendingVoice}
+          onDiscard={handleCancelRecording}
+          onSend={handleSendPendingVoice}
+        />
       ) : (
         <div className="w-full max-w-full px-2 py-2 sm:px-4">
           <Form {...form}>
