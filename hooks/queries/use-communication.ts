@@ -15,7 +15,7 @@ import {
   leaveConversationRoom,
   subscribeCommunicationSocket,
 } from "@/lib/socket/communication-socket";
-import type { MessagesResponse } from "@/lib/schemas/communication";
+import type { MessagesResponse, CommunicationMessage } from "@/lib/schemas/communication";
 import {
   createOptimisticMessage,
   type SendMessageWithOptimistic,
@@ -118,7 +118,7 @@ export const useSendMessage = () => {
 
         queryClient.setQueryData<MessagesResponse | null>(queryKey, {
           ...previous,
-          items: [...previous.items, optimistic],
+          items: [...previous.items, optimistic as CommunicationMessage],
         });
       }
 
