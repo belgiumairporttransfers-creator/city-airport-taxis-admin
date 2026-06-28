@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, Fragment } from "react";
 import { useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -32,6 +33,7 @@ import toast from "react-hot-toast";
 import type { Contact, PinnedMessage } from "@/lib/chat/types";
 import { mapAuthProfileToChatProfile, mapMessageToChat } from "@/lib/chat/mappers";
 import { emitMessageDelivered } from "@/lib/socket/communication-socket";
+import { patchConversationUnreadInCache } from "@/lib/chat/update-message-status-cache";
 import TypingIndicator from "@/lib/chat/typing-indicator";
 import { useAuthMe } from "@/hooks/queries/use-auth";
 import { useDrivers } from "@/hooks/queries/use-drivers";
@@ -67,6 +69,7 @@ const ChatPage = () => {
   const [deleteMessageId, setDeleteMessageId] = useState<string | null>(null);
 
   const { data: authMe } = useAuthMe();
+  const queryClient = useQueryClient();
   const profileData = useMemo(
     () => (authMe ? mapAuthProfileToChatProfile(authMe) : undefined),
     [authMe]
@@ -164,16 +167,25 @@ const ChatPage = () => {
   });
 
   useEffect(() => {
+    if (!selectedConversationId) return;
+    patchConversationUnreadInCache(queryClient, selectedConversationId);
+  }, [selectedConversationId, queryClient]);
+
+  useEffect(() => {
     if (!selectedConversationId || !messagesData?.items?.length) return;
 
     const lastMessage = messagesData.items[messagesData.items.length - 1];
-    if (!lastMessage || lastMessage.sender.accountId === profileData?.id) return;
+    if (!lastMessage) return;
 
     markReadMutation.mutate({
       messageId: lastMessage.id,
       conversationId: selectedConversationId,
     });
-  }, [selectedConversationId, messagesData?.items, profileData?.id]);
+  }, [
+    selectedConversationId,
+    messagesData?.items?.[messagesData.items.length - 1]?.id,
+    profileData?.id,
+  ]);
 
   useEffect(() => {
     if (!messagesData?.items || !profileData?.id) return;

@@ -29,6 +29,11 @@ import {
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { getApiErrorMessage } from "@/lib/chat/get-api-error-message";
+import {
+  patchConversationUnreadInCache,
+  patchMessageDeliveredInCache,
+  patchMessagesReadInCache,
+} from "@/lib/chat/update-message-status-cache";
 
 export const CONVERSATIONS_QUERY_KEY = ["communication", "conversations"] as const;
 export const MESSAGES_QUERY_KEY = ["communication", "messages"] as const;
@@ -196,7 +201,13 @@ export const useMarkConversationRead = () => {
       messageId: string;
       conversationId: string;
     }) => markMessageRead(messageId, conversationId),
-    onSuccess: async () => {
+    onMutate: (variables) => {
+      patchConversationUnreadInCache(queryClient, variables.conversationId);
+    },
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: [...MESSAGES_QUERY_KEY, variables.conversationId],
+      });
       await refreshConversations(queryClient);
     },
   });
@@ -237,12 +248,28 @@ export const useCommunicationSocket = (
         void queryClient.invalidateQueries({ queryKey: MESSAGES_QUERY_KEY });
         void refreshConversations(queryClient);
       },
-      onMessageRead: () => {
-        void queryClient.invalidateQueries({ queryKey: MESSAGES_QUERY_KEY });
+      onMessageRead: (payload) => {
+        patchMessagesReadInCache(queryClient, {
+          conversationId: payload.conversationId,
+          messageId: payload.messageId,
+          readAt: payload.readAt,
+          currentUserId,
+        });
+        void queryClient.invalidateQueries({
+          queryKey: [...MESSAGES_QUERY_KEY, payload.conversationId],
+        });
         void refreshConversations(queryClient);
       },
-      onMessageDelivered: () => {
-        void queryClient.invalidateQueries({ queryKey: MESSAGES_QUERY_KEY });
+      onMessageDelivered: (payload) => {
+        patchMessageDeliveredInCache(queryClient, {
+          conversationId: payload.conversationId,
+          messageId: payload.messageId,
+          deliveredAt: payload.deliveredAt,
+          currentUserId,
+        });
+        void queryClient.invalidateQueries({
+          queryKey: [...MESSAGES_QUERY_KEY, payload.conversationId],
+        });
         void refreshConversations(queryClient);
       },
       onTyping: (payload) => {
