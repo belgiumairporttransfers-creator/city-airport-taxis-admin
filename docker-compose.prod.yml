@@ -1,15 +1,9 @@
 services:
   admin:
-    image: ${IMAGE:-city-airport-taxis-admin:latest}
-    pull_policy: ${PULL_POLICY:-missing}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-}
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
-        NEXT_PUBLIC_SOCKET_PATH: ${NEXT_PUBLIC_SOCKET_PATH:-/socket.io}
+    image: ${IMAGE:-ghcr.io/belgiumairporttransfers-creator/city-airport-taxis-admin:latest}
+    pull_policy: always
     restart: unless-stopped
+    stop_grace_period: 30s
     ports:
       - "127.0.0.1:${PORT:-3000}:3000"
     env_file:
@@ -24,3 +18,12 @@ services:
       timeout: 5s
       retries: 3
       start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 768m
+    cpus: 1.5
