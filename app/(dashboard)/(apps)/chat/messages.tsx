@@ -248,6 +248,7 @@ const MessageBubble = ({
   const bubbleClass = cn(
     "relative w-full rounded-lg px-2.5 py-1.5 text-sm shadow-sm",
     isOwnMessage ? "bg-primary-100 text-default-900" : "bg-default-200 text-default-900",
+    isOwnMessage && message.status === "pending" && "opacity-80",
     "max-w-[min(100%,calc(100vw-3rem))] sm:max-w-[min(100%,420px)]"
   );
 

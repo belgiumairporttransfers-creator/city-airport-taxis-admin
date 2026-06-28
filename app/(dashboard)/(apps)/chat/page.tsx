@@ -23,6 +23,7 @@ import ForwardMessage from "./forward-message";
 import MessageDateSeparator from "./message-date-separator";
 import ContactInfo from "./contact-info";
 import ConfirmationDialog from "@/components/confirmation-dialog";
+import { getOptimisticSender } from "@/lib/chat/optimistic-message";
 import { formatChatDateLabel, shouldShowChatDateSeparator } from "@/lib/chat/date";
 import { useChatScrollToBottom } from "@/lib/chat/use-chat-scroll-to-bottom";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -233,13 +234,14 @@ const ChatPage = () => {
   const deleteMessagePreview = messageToDelete?.message.trim().slice(0, 80);
 
   const handleSendMessage = (message: string) => {
-    if (!selectedConversationId || !message.trim()) return;
+    if (!selectedConversationId || !message.trim() || !profileData?.id) return;
 
     sendMessageMutation.mutate({
       conversationId: selectedConversationId,
       type: "text",
       content: message.trim(),
       replyToMessageId: replay && replayData.messageId ? replayData.messageId : undefined,
+      optimisticSender: getOptimisticSender(profileData, "admin"),
     });
     clearReply();
   };
@@ -430,6 +432,11 @@ const ChatPage = () => {
                       replay && replayData.messageId ? replayData.messageId : undefined
                     }
                     onMessageSent={clearReply}
+                    optimisticSender={
+                      profileData?.id
+                        ? getOptimisticSender(profileData, "admin")
+                        : undefined
+                    }
                   />
                 </CardFooter>
               </Card>

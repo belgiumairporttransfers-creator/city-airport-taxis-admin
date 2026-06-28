@@ -1,9 +1,9 @@
-import { Check, CheckCheck } from "lucide-react";
+import { Check, CheckCheck, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { MessageStatus } from "@/lib/schemas/communication";
+import type { UiMessageStatus } from "@/lib/chat/types";
 
 type MessageStatusTicksProps = {
-  status?: MessageStatus | string;
+  status?: UiMessageStatus | string;
   className?: string;
   seenClassName?: string;
   defaultClassName?: string;
@@ -17,6 +17,20 @@ const MessageStatusTicks = ({
   defaultClassName = "text-default-400",
   variant = "inline",
 }: MessageStatusTicksProps) => {
+  if (status === "pending") {
+    return (
+      <Clock
+        className={cn(
+          variant === "badge" ? "h-2.5 w-2.5 text-primary-foreground" : "h-3 w-3 shrink-0",
+          variant === "inline" && defaultClassName,
+          className
+        )}
+        strokeWidth={2.5}
+        aria-label="Sending"
+      />
+    );
+  }
+
   const isSeen = status === "seen";
   const isDelivered = status === "delivered" || isSeen;
   const colorClass = isSeen ? seenClassName : defaultClassName;

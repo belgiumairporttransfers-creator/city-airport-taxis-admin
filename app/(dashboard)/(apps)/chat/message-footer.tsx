@@ -16,6 +16,7 @@ import {
   useSendMessage,
   useUploadCommunicationAttachment,
 } from "@/hooks/queries/use-communication";
+import type { OptimisticSender } from "@/lib/chat/optimistic-message";
 import { formatVoiceDuration, useVoiceRecorder } from "@/hooks/use-voice-recorder";
 import toast from "react-hot-toast";
 
@@ -61,6 +62,7 @@ const MessageFooter = ({
   conversationId,
   replyToMessageId,
   onMessageSent,
+  optimisticSender,
 }: {
   handleSendMessage: (message: string) => void;
   replay: boolean;
@@ -69,6 +71,7 @@ const MessageFooter = ({
   conversationId?: string | null;
   replyToMessageId?: string;
   onMessageSent?: () => void;
+  optimisticSender?: OptimisticSender;
 }) => {
   const isTypingRef = useRef(false);
   const stopTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -199,6 +202,7 @@ const MessageFooter = ({
         type: "voice",
         attachmentId: attachment.id,
         replyToMessageId,
+        optimisticSender,
       });
 
       onMessageSent?.();
@@ -271,6 +275,7 @@ const MessageFooter = ({
         type: messageType,
         attachmentId: attachment.id,
         replyToMessageId,
+        optimisticSender,
       });
 
       clearPendingAttachment();

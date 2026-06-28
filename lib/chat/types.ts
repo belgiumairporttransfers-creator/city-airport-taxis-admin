@@ -1,6 +1,8 @@
 import type { StaticImageData } from "next/image";
 import type { MessageAttachment, MessageStatus, MessageType } from "@/lib/schemas/communication";
 
+export type UiMessageStatus = MessageStatus | "pending" | "failed";
+
 export type ChatAvatar = StaticImageData | { src: string } | string;
 
 export type Contact = {
@@ -34,7 +36,7 @@ export type ChatMessage = {
   type?: MessageType;
   attachment?: MessageAttachment;
   replyTo?: ChatMessageReplyTo;
-  status?: MessageStatus;
+  status?: UiMessageStatus;
   isDeleted?: boolean;
 };
 

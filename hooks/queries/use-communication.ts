@@ -15,7 +15,11 @@ import {
   leaveConversationRoom,
   subscribeCommunicationSocket,
 } from "@/lib/socket/communication-socket";
-import type { SendMessagePayload } from "@/lib/schemas/communication";
+import type { MessagesResponse } from "@/lib/schemas/communication";
+import {
+  createOptimisticMessage,
+  type SendMessageWithOptimistic,
+} from "@/lib/chat/optimistic-message";
 import {
   useMutation,
   useQuery,
@@ -90,18 +94,62 @@ export const useSendMessage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: SendMessagePayload) =>
-      sendMessage({
-        ...payload,
-        clientMessageId: payload.clientMessageId ?? crypto.randomUUID(),
-      }),
-    onSuccess: async (_data, variables) => {
-      await queryClient.invalidateQueries({
-        queryKey: [...MESSAGES_QUERY_KEY, variables.conversationId],
-      });
-      await refreshConversations(queryClient);
+    mutationFn: async (payload: SendMessageWithOptimistic) => {
+      const { optimisticSender: _optimisticSender, ...sendPayload } = payload;
+      const clientMessageId = sendPayload.clientMessageId ?? crypto.randomUUID();
+      return sendMessage({ ...sendPayload, clientMessageId });
     },
-    onError: (error: ApiError) => {
+    onMutate: async (payload) => {
+      const clientMessageId = payload.clientMessageId ?? crypto.randomUUID();
+      payload.clientMessageId = clientMessageId;
+
+      const queryKey = [...MESSAGES_QUERY_KEY, payload.conversationId] as const;
+
+      await queryClient.cancelQueries({ queryKey });
+
+      const previous = queryClient.getQueryData<MessagesResponse | null>(queryKey);
+
+      if (previous && payload.optimisticSender) {
+        const optimistic = createOptimisticMessage(
+          payload,
+          clientMessageId,
+          payload.optimisticSender
+        );
+
+        queryClient.setQueryData<MessagesResponse | null>(queryKey, {
+          ...previous,
+          items: [...previous.items, optimistic],
+        });
+      }
+
+      return { previous, queryKey };
+    },
+    onSuccess: (data, _variables, context) => {
+      if (data && context?.queryKey) {
+        queryClient.setQueryData<MessagesResponse | null>(context.queryKey, (old) => {
+          if (!old) return old;
+
+          const clientMessageId = data.clientMessageId ?? data.id;
+          const filtered = old.items.filter(
+            (item) =>
+              item.id !== data.id &&
+              item.id !== `pending-${clientMessageId}` &&
+              item.clientMessageId !== clientMessageId
+          );
+
+          return {
+            ...old,
+            items: [...filtered, data],
+          };
+        });
+      }
+
+      void refreshConversations(queryClient);
+    },
+    onError: (error: ApiError, _variables, context) => {
+      if (context?.previous !== undefined && context?.queryKey) {
+        queryClient.setQueryData(context.queryKey, context.previous);
+      }
       toast.error(error?.message || "Failed to send message.");
     },
   });
