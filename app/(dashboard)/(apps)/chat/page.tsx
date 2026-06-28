@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, Fragment } from "react";
+import { useCallback, useEffect, useMemo, useState, Fragment } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Card,
@@ -24,6 +24,7 @@ import MessageDateSeparator from "./message-date-separator";
 import ContactInfo from "./contact-info";
 import ConfirmationDialog from "@/components/confirmation-dialog";
 import { formatChatDateLabel, shouldShowChatDateSeparator } from "@/lib/chat/date";
+import { useChatScrollToBottom } from "@/lib/chat/use-chat-scroll-to-bottom";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
@@ -154,7 +155,12 @@ const ChatPage = () => {
     [messagesData?.items]
   );
 
-  const chatHeightRef = useRef<HTMLDivElement | null>(null);
+  const { containerRef: chatHeightRef, contentRef: chatContentRef } = useChatScrollToBottom({
+    conversationId: selectedConversationId,
+    isLoading: messageLoading,
+    messageCount: chatMessages.length,
+    isPeerTyping,
+  });
 
   useEffect(() => {
     if (!selectedConversationId || !messagesData?.items?.length) return;
@@ -177,15 +183,6 @@ const ChatPage = () => {
       }
     });
   }, [messagesData?.items, profileData?.id]);
-
-  useEffect(() => {
-    if (chatHeightRef.current) {
-      chatHeightRef.current.scrollTo({
-        top: chatHeightRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  }, [chatMessages.length, selectedConversationId, isPeerTyping]);
 
   useEffect(() => {
     setReply(false);
@@ -307,9 +304,14 @@ const ChatPage = () => {
   };
 
   const isLg = useMediaQuery("(max-width: 1024px)");
+  const showMobileChat = isLg && Boolean(selectedConversationId && selectedContact);
 
   return (
-    <div className="flex gap-5 app-height relative rtl:space-x-reverse">
+    <div
+      className={cn("flex gap-5 app-height relative rtl:space-x-reverse", {
+        "gap-0 max-lg:h-[100dvh] max-lg:max-h-[100dvh]": isLg,
+      })}
+    >
       {isLg && showContactSidebar && (
         <div
           className=" bg-background/60 backdrop-filter backdrop-blur-xs absolute w-full flex-1 inset-0 z-99 rounded-md"
@@ -323,11 +325,13 @@ const ChatPage = () => {
         />
       )}
       <div
-        className={cn("transition-all duration-150 flex-none  ", {
-          "absolute h-full top-0 md:w-[260px] w-[200px] z-999": isLg,
+        className={cn("transition-all duration-150 flex-none", {
+          "absolute h-full top-0 md:w-[260px] w-full max-w-[320px] z-999": isLg,
           "flex-none min-w-[260px]": !isLg,
           "left-0": isLg && showContactSidebar,
           "-left-full": isLg && !showContactSidebar,
+          "max-lg:w-full max-lg:max-w-none": isLg && !showMobileChat,
+          hidden: showMobileChat,
         })}
       >
         <Card className="h-full pb-0">
@@ -357,11 +361,15 @@ const ChatPage = () => {
       </div>
 
       {selectedConversationId && selectedContact ? (
-        <div className="flex-1 ">
-          <div className=" flex space-x-5 h-full rtl:space-x-reverse">
-            <div className="flex-1">
-              <Card className="h-full flex flex-col ">
-                <CardHeader className="flex-none mb-0">
+        <div
+          className={cn("flex-1 min-w-0", {
+            "fixed inset-0 z-50 bg-background max-lg:flex max-lg:flex-col": showMobileChat,
+          })}
+        >
+          <div className="flex h-full min-h-0 space-x-5 rtl:space-x-reverse max-lg:space-x-0">
+            <div className="flex min-h-0 flex-1 flex-col">
+              <Card className="h-full flex flex-col rounded-none border-0 shadow-none max-lg:h-full lg:rounded-lg lg:border lg:shadow-sm">
+                <CardHeader className="mb-0 flex-none border-b border-border px-3 py-2.5 lg:px-6 lg:py-4">
                   <MessageHeader
                     showInfo={showInfo}
                     handleShowInfo={handleShowInfo}
@@ -378,38 +386,40 @@ const ChatPage = () => {
                 />
                 <CardContent className="p-0! relative min-h-0 flex-1 overflow-hidden">
                   <div className="chat-scrollbar h-full overflow-y-auto py-4" ref={chatHeightRef}>
-                    {messageLoading ? (
-                      <Loader />
-                    ) : messageIsError ? (
-                      <EmptyMessage />
-                    ) : (
-                      chatMessages.map((message, i) => (
-                        <Fragment key={message.id}>
-                          {shouldShowChatDateSeparator(
-                            message.time,
-                            chatMessages[i - 1]?.time
-                          ) ? (
-                            <MessageDateSeparator label={formatChatDateLabel(message.time)} />
-                          ) : null}
-                          <Messages
-                            message={message}
-                            contact={selectedContact}
-                            profile={profileData}
-                            onDelete={onDelete}
-                            index={i}
-                            selectedChatId={selectedConversationId}
-                            handleReply={handleReply}
-                            handleForward={handleForward}
-                            handlePinMessage={handlePinMessage}
-                            pinnedMessages={pinnedMessages}
-                          />
-                        </Fragment>
-                      ))
-                    )}
-                    {isPeerTyping ? <TypingIndicator /> : null}
+                    <div ref={chatContentRef}>
+                      {messageLoading ? (
+                        <Loader />
+                      ) : messageIsError ? (
+                        <EmptyMessage />
+                      ) : (
+                        chatMessages.map((message, i) => (
+                          <Fragment key={message.id}>
+                            {shouldShowChatDateSeparator(
+                              message.time,
+                              chatMessages[i - 1]?.time
+                            ) ? (
+                              <MessageDateSeparator label={formatChatDateLabel(message.time)} />
+                            ) : null}
+                            <Messages
+                              message={message}
+                              contact={selectedContact}
+                              profile={profileData}
+                              onDelete={onDelete}
+                              index={i}
+                              selectedChatId={selectedConversationId}
+                              handleReply={handleReply}
+                              handleForward={handleForward}
+                              handlePinMessage={handlePinMessage}
+                              pinnedMessages={pinnedMessages}
+                            />
+                          </Fragment>
+                        ))
+                      )}
+                      {isPeerTyping ? <TypingIndicator /> : null}
+                    </div>
                   </div>
                 </CardContent>
-                <CardFooter className="flex-none flex-col px-0 py-4 border-t border-border">
+                <CardFooter className="flex-none flex-col justify-center border-t border-border px-0 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:py-2.5">
                   <MessageFooter
                     handleSendMessage={handleSendMessage}
                     replay={replay}

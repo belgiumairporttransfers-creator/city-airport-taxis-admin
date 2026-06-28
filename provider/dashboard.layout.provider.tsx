@@ -12,10 +12,15 @@ import LayoutLoader from "@/components/layout-loader";
 import ScrollLockFix from "@/components/scroll-lock-fix";
 import { Suspense } from "react";
 
+import { useMediaQuery } from "@/hooks/use-media-query";
+
 const DashBoardLayoutProvider = ({ children }: { children: React.ReactNode }) => {
   const { collapsed } = useSidebar();
   const location = usePathname();
   const mounted = useMounted();
+  const isChatPage = location.startsWith("/chat");
+  const isMobile = useMediaQuery("(max-width: 1023px)");
+  const hideHeaderOnMobileChat = isChatPage && isMobile;
 
   if (!mounted) {
     return <LayoutLoader />;
@@ -24,8 +29,12 @@ const DashBoardLayoutProvider = ({ children }: { children: React.ReactNode }) =>
   return (
     <AuthGuard>
       <ScrollLockFix />
-      <div className="min-h-screen overflow-x-clip bg-background">
-        <Header />
+      <div
+        className={cn("min-h-screen overflow-x-clip bg-background", {
+          "chat-layout": isChatPage,
+        })}
+      >
+        {!hideHeaderOnMobileChat ? <Header /> : null}
         <Sidebar />
 
         <div
@@ -34,10 +43,15 @@ const DashBoardLayoutProvider = ({ children }: { children: React.ReactNode }) =>
             {
               "xl:ml-[300px]": !collapsed,
               "xl:ml-[72px]": collapsed,
+              "max-lg:!ml-0": isChatPage,
             }
           )}
         >
-          <div className={cn("layout-padding px-4 sm:px-6 pt-6 page-min-height max-w-full")}>
+          <div
+            className={cn("layout-padding px-4 sm:px-6 pt-6 page-min-height max-w-full", {
+              "max-lg:px-0 max-lg:pt-0 max-lg:pb-0": isChatPage,
+            })}
+          >
             <LayoutWrapper location={location}>{children}</LayoutWrapper>
           </div>
         </div>

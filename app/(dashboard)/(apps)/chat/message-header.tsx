@@ -32,34 +32,34 @@ const MessageHeader = ({
   const avatarSrc = getAvatarSrc(profile?.avatar);
 
   return (
-    <div className="flex  items-center">
-      <div className="flex flex-1 gap-3 items-center">
+    <div className="flex items-center gap-2 px-0 py-0">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
         {isLg && (
           <Menu
-            className=" h-5 w-5 cursor-pointer text-default-600"
+            className="h-5 w-5 shrink-0 cursor-pointer text-default-600"
             onClick={mblChatHandler}
           />
         )}
-        <div className="relative inline-block">
-          <Avatar>
+        <div className="relative inline-block shrink-0">
+          <Avatar className="h-9 w-9">
             {avatarSrc ? <AvatarImage src={avatarSrc} alt="" /> : null}
             <AvatarFallback>{profile?.fullName?.slice(0, 2)}</AvatarFallback>
           </Avatar>
           <Badge
-            className=" h-3 w-3  p-0 ring-1 ring-border ring-offset-[1px]   items-center justify-center absolute left-[calc(100%-12px)] top-[calc(100%-12px)]"
+            className="absolute left-[calc(100%-10px)] top-[calc(100%-10px)] h-2.5 w-2.5 items-center justify-center p-0 ring-1 ring-border ring-offset-[1px]"
             color={isOnline ? "success" : "secondary"}
           ></Badge>
         </div>
-        <div className={cn(profile.isTyping ? "block" : "hidden lg:block")}>
-          <div className="text-sm font-medium text-default-900 ">
-            <span className="relative">{profile?.fullName}</span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium text-default-900">
+            {profile?.fullName}
           </div>
-          <span className="text-xs text-default-500">
+          <span className="block truncate text-xs text-default-500">
             {profile.isTyping ? "Typing..." : isOnline ? "Active Now" : "Offline"}
           </span>
         </div>
       </div>
-      <div className="flex-none space-x-2 rtl:space-x-reverse">
+      <div className="hidden shrink-0 space-x-1 sm:flex sm:space-x-2 rtl:space-x-reverse">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

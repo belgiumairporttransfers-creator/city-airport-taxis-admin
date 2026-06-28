@@ -66,9 +66,5 @@ export const uploadCommunicationAttachment = ({
   if (kind) formData.append("kind", kind);
   if (duration !== undefined) formData.append("duration", String(duration));
 
-  return api.post<MessageAttachment>(`${BASE}/attachments/upload`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  return api.post<MessageAttachment>(`${BASE}/attachments/upload`, formData);
 };

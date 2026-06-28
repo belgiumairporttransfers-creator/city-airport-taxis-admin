@@ -110,9 +110,6 @@ export const useSendMessage = () => {
 export const useUploadCommunicationAttachment = () => {
   return useMutation({
     mutationFn: uploadCommunicationAttachment,
-    onError: (error: ApiError) => {
-      toast.error(error?.message || "Failed to upload voice message.");
-    },
   });
 };
 

@@ -30,7 +30,7 @@ export function ImageMessagePreview({
         <img
           src={attachment.url}
           alt={attachment.filename}
-          className="max-h-[320px] max-w-[min(280px,70vw)] cursor-pointer object-cover"
+          className="h-auto max-h-[220px] w-full max-w-full cursor-pointer rounded-md object-cover sm:max-h-[320px] sm:max-w-[min(280px,70vw)]"
           loading="lazy"
         />
       </button>

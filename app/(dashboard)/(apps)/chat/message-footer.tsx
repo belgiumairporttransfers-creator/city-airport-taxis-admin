@@ -3,9 +3,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Icon } from "@iconify/react";
-import { Annoyed, Mic, Paperclip, SendHorizontal, Square, X } from "lucide-react";
+import { Annoyed, Mic, Paperclip, SendHorizontal, Square, Trash2 } from "lucide-react";
 import { emitStopTyping, emitTyping } from "@/lib/socket/communication-socket";
 import { cn } from "@/lib/utils";
 import ChatEmojiPicker from "@/lib/chat/chat-emoji-picker";
@@ -31,8 +30,10 @@ type MessageFormValues = {
 };
 
 const composerIconButtonClass =
-  "shrink-0 rounded-full bg-default-200 hover:bg-default-300 h-9 w-9 p-0";
-const composerIconClass = "h-5 w-5 text-primary";
+  "flex !h-9 !w-9 !min-h-9 !min-w-9 shrink-0 items-center justify-center rounded-full bg-default-200 p-0 hover:bg-default-300";
+const composerIconClass = "h-[18px] w-[18px] text-primary";
+const composerInputClassName =
+  "box-border h-9 min-h-9 max-h-24 w-full min-w-0 resize-none rounded-md border border-default-300 bg-card px-3 py-[7px] text-sm leading-5 text-default-500 transition duration-300 placeholder:text-accent-foreground/50 focus:border-primary focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 no-scrollbar";
 
 const getAudioDuration = (file: File) =>
   new Promise<number>((resolve) => {
@@ -215,9 +216,9 @@ const MessageFooter = ({
 
     if (isRecording) {
       void (async () => {
-        const file = await stopRecording();
-        if (file) {
-          await sendVoiceFile(file, duration);
+        const recording = await stopRecording();
+        if (recording) {
+          await sendVoiceFile(recording.file, recording.duration);
         }
       })();
       return;
@@ -298,7 +299,7 @@ const MessageFooter = ({
       />
 
       {replay && (
-        <div className="flex w-full items-center justify-between gap-4 border-t border-border px-6 py-3">
+        <div className="flex w-full items-center justify-between gap-3 border-t border-border px-3 py-2.5 sm:px-6 sm:py-3">
           <div className="min-w-0 flex-1 rounded-sm border-l-4 border-primary bg-default-200 py-1.5 pl-3 pr-2">
             <div className="text-xs font-semibold text-primary">
               {replayData?.contact?.fullName}
@@ -315,47 +316,62 @@ const MessageFooter = ({
       )}
 
       {isRecording ? (
-        <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2 lg:px-4">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
+        <div className="flex w-full items-center gap-2 border-t border-border px-2 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-9 w-9 shrink-0 rounded-full text-default-500 hover:bg-destructive/10 hover:text-destructive"
+            onClick={cancelRecording}
+            disabled={isSendingVoice}
+            aria-label="Cancel recording"
+          >
+            <Trash2 className="h-[18px] w-[18px]" />
+          </Button>
+
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive/70 opacity-75" />
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-destructive" />
             </span>
-            <span className="text-sm font-medium text-default-900">Recording</span>
-            <span className="text-sm text-default-500">{formatVoiceDuration(duration)}</span>
+            <span className="shrink-0 text-sm font-medium tabular-nums text-default-900">
+              {formatVoiceDuration(duration)}
+            </span>
+            <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden px-1">
+              {Array.from({ length: 24 }).map((_, index) => (
+                <span
+                  key={index}
+                  className="w-0.5 shrink-0 rounded-full bg-primary/50"
+                  style={{
+                    height: `${10 + ((index * 7) % 14)}px`,
+                    animation: "pulse 1s ease-in-out infinite",
+                    animationDelay: `${(index % 6) * 120}ms`,
+                  }}
+                />
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 rounded-full"
-              onClick={cancelRecording}
-              disabled={isSendingVoice}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              className="h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={handleMicClick}
-              disabled={isSendingVoice || isRequestingPermission}
-            >
-              {isSendingVoice || isRequestingPermission ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-              ) : (
-                <Square className="h-3.5 w-3.5 fill-current" />
-              )}
-            </Button>
-          </div>
-        </div>
-      ) : null}
 
-      <div className="w-full px-2 lg:px-4">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            size="icon"
+            className="h-9 w-9 shrink-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={handleMicClick}
+            disabled={isSendingVoice || isRequestingPermission}
+            aria-label="Stop and send voice message"
+          >
+            {isSendingVoice || isRequestingPermission ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+            ) : (
+              <Square className="h-3.5 w-3.5 fill-current" />
+            )}
+          </Button>
+        </div>
+      ) : (
+        <div className="w-full max-w-full px-2 py-2 sm:px-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <div className="grid w-full min-w-0 grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] items-center gap-1.5 sm:gap-2">
               <Button
                 type="button"
                 size="icon"
@@ -394,23 +410,19 @@ const MessageFooter = ({
                 )}
               </Button>
 
-              <div className="min-w-0 flex-1">
-                <Input
-                  name="message"
-                  type="textarea"
-                  placeholder="Type your message..."
-                  rows={1}
-                  disabled={isComposerBusy}
-                  className="mb-0 [&_[data-slot=form-item]]:mb-0"
-                  inputClassName="!min-h-9 !max-h-24 !h-9 resize-none !py-0 !pt-0 !pb-0 !px-3 text-sm leading-9 2xl:!min-h-9 2xl:!text-sm 2xl:!leading-9 no-scrollbar"
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                      event.preventDefault();
-                      void form.handleSubmit(onSubmit)();
-                    }
-                  }}
-                />
-              </div>
+              <textarea
+                {...form.register("message")}
+                rows={1}
+                placeholder="Type your message..."
+                disabled={isComposerBusy}
+                className={composerInputClassName}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    void form.handleSubmit(onSubmit)();
+                  }
+                }}
+              />
 
               <Popover>
                 <PopoverTrigger asChild>
@@ -433,6 +445,7 @@ const MessageFooter = ({
 
               <Button
                 type="submit"
+                size="icon"
                 className={composerIconButtonClass}
                 disabled={isComposerBusy}
               >
@@ -442,6 +455,7 @@ const MessageFooter = ({
           </form>
         </Form>
       </div>
+      )}
     </>
   );
 };

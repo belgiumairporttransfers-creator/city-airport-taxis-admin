@@ -358,6 +358,17 @@ html body[data-scroll-locked] .right-scroll-bar-position {
   height: calc(var(--vh, 1vh) * 100 - 11.1rem) !important;
 }
 
+@media (max-width: 1023px) {
+  .chat-layout .app-height {
+    height: 100dvh !important;
+    max-height: 100dvh;
+  }
+
+  .chat-layout .page-min-height {
+    min-height: 100dvh;
+  }
+}
+
 @media (max-width: 768px) {
   .app-height {
     height: calc(var(--vh, 1vh) * 100 - 10.5rem) !important;

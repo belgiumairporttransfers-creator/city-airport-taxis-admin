@@ -5,6 +5,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const MAX_RECORDING_SECONDS = 600;
 const MIN_RECORDING_SECONDS = 1;
 
+export type VoiceRecordingResult = {
+  file: File;
+  duration: number;
+};
+
 const getSupportedMimeType = () => {
   if (typeof MediaRecorder === "undefined") return "";
 
@@ -13,9 +18,14 @@ const getSupportedMimeType = () => {
   return candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? "";
 };
 
+const normalizeMimeType = (mimeType: string) =>
+  mimeType.split(";")[0].trim().toLowerCase();
+
 const getFileExtension = (mimeType: string) => {
-  if (mimeType.includes("ogg")) return "ogg";
-  if (mimeType.includes("mp4")) return "m4a";
+  const normalized = normalizeMimeType(mimeType);
+
+  if (normalized.includes("ogg")) return "ogg";
+  if (normalized.includes("mp4")) return "m4a";
   return "webm";
 };
 
@@ -166,7 +176,9 @@ export const useVoiceRecorder = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mimeTypeRef = useRef("audio/webm");
-  const stopRecordingRef = useRef<(() => Promise<File | null>) | null>(null);
+  const durationRef = useRef(0);
+  const startedAtRef = useRef<number | null>(null);
+  const stopRecordingRef = useRef<(() => Promise<VoiceRecordingResult | null>) | null>(null);
 
   const cleanupStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -197,7 +209,8 @@ export const useVoiceRecorder = () => {
       streamRef.current = stream;
 
       const recorder = createMediaRecorder(stream);
-      mimeTypeRef.current = recorder.mimeType || getSupportedMimeType() || "audio/webm";
+      const rawMimeType = recorder.mimeType || getSupportedMimeType() || "audio/webm";
+      mimeTypeRef.current = normalizeMimeType(rawMimeType);
       chunksRef.current = [];
 
       recorder.ondataavailable = (event) => {
@@ -208,15 +221,21 @@ export const useVoiceRecorder = () => {
 
       recorder.start(250);
       mediaRecorderRef.current = recorder;
+      startedAtRef.current = performance.now();
+      durationRef.current = 0;
       setDuration(0);
       setIsRecording(true);
 
       timerRef.current = setInterval(() => {
         setDuration((current) => {
-          if (current + 1 >= MAX_RECORDING_SECONDS) {
+          const next = current + 1;
+          durationRef.current = next;
+
+          if (next >= MAX_RECORDING_SECONDS) {
             void stopRecordingRef.current?.();
           }
-          return current + 1;
+
+          return next;
         });
       }, 1000);
     } catch (caughtError) {
@@ -227,16 +246,20 @@ export const useVoiceRecorder = () => {
     }
   }, [cleanupStream, isRecording, isRequestingPermission]);
 
-  const stopRecording = useCallback(async (): Promise<File | null> => {
+  const stopRecording = useCallback(async (): Promise<VoiceRecordingResult | null> => {
     const recorder = mediaRecorderRef.current;
     if (!recorder || recorder.state === "inactive") {
       cleanupStream();
       setIsRecording(false);
+      durationRef.current = 0;
       setDuration(0);
+      startedAtRef.current = null;
       return null;
     }
 
-    const recordedDuration = duration;
+    const elapsedSeconds = startedAtRef.current
+      ? Math.max(1, Math.round((performance.now() - startedAtRef.current) / 1000))
+      : Math.max(durationRef.current, MIN_RECORDING_SECONDS);
 
     return new Promise((resolve) => {
       recorder.onstop = () => {
@@ -244,25 +267,28 @@ export const useVoiceRecorder = () => {
         const blob = new Blob(chunksRef.current, { type: mimeType });
         cleanupStream();
         setIsRecording(false);
+        durationRef.current = 0;
         setDuration(0);
+        startedAtRef.current = null;
 
-        if (recordedDuration < MIN_RECORDING_SECONDS || blob.size === 0) {
+        if (elapsedSeconds < MIN_RECORDING_SECONDS || blob.size === 0) {
           setError("Hold to record at least 1 second of audio.");
           resolve(null);
           return;
         }
 
         const extension = getFileExtension(mimeType);
-        resolve(
-          new File([blob], `voice-${Date.now()}.${extension}`, {
+        resolve({
+          file: new File([blob], `voice-${Date.now()}.${extension}`, {
             type: mimeType,
-          })
-        );
+          }),
+          duration: elapsedSeconds,
+        });
       };
 
       recorder.stop();
     });
-  }, [cleanupStream, duration]);
+  }, [cleanupStream]);
 
   stopRecordingRef.current = stopRecording;
 
@@ -278,7 +304,9 @@ export const useVoiceRecorder = () => {
     }
 
     setIsRecording(false);
+    durationRef.current = 0;
     setDuration(0);
+    startedAtRef.current = null;
     setIsRequestingPermission(false);
   }, [cleanupStream]);
 
