@@ -1,6 +1,6 @@
 FROM node:22.18.0-alpine AS base
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+RUN npm install -g pnpm@9.15.9
 
 FROM base AS deps
 RUN apk add --no-cache python3 make g++
