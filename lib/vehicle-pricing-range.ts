@@ -1,4 +1,5 @@
 import type { VehiclePricing } from "@/lib/schemas";
+import { formatDistanceRange } from "@/lib/utils";
 
 type SlabRange = {
   minDistance: number;
@@ -69,10 +70,7 @@ export const validateSlabRange = ({
     if (excludeSlabId && slab._id === excludeSlabId) continue;
 
     if (slabsOverlap(candidate, slab)) {
-      const slabLabel =
-        slab.maxDistance === null
-          ? `${slab.minDistance} km+`
-          : `${slab.minDistance}–${slab.maxDistance} km`;
+      const slabLabel = formatDistanceRange(slab.minDistance, slab.maxDistance);
 
       return {
         field: "minDistance",

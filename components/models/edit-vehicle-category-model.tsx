@@ -28,7 +28,6 @@ const toFormValues = (category: VehicleCategory): UpdateVehicleCategoryFormSchem
   description: category.description ?? "",
   passengerCapacity: category.passengerCapacity,
   luggageCapacity: category.luggageCapacity,
-  handLuggageCapacity: category.handLuggageCapacity,
   sortOrder: category.sortOrder,
   status: category.status,
   isDefault: category.isDefault,
@@ -43,7 +42,6 @@ const toPayload = (
   description: values.description?.trim() || undefined,
   passengerCapacity: values.passengerCapacity,
   luggageCapacity: values.luggageCapacity,
-  handLuggageCapacity: values.handLuggageCapacity,
   sortOrder: values.sortOrder,
   status: values.status,
   isDefault: values.isDefault,
@@ -118,10 +116,9 @@ const EditVehicleCategoryModel = ({ open, category, onClose }: EditVehicleCatego
 
             <Input name="description" type="textarea" label="Description" />
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input name="passengerCapacity" type="number" label="Passengers" min={1} />
               <Input name="luggageCapacity" type="number" label="Luggage" min={0} />
-              <Input name="handLuggageCapacity" type="number" label="Hand luggage" min={0} />
             </div>
 
             <Input

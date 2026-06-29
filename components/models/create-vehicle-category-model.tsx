@@ -26,7 +26,6 @@ const defaultValues: CreateVehicleCategoryFormSchema = {
   description: "",
   passengerCapacity: 3,
   luggageCapacity: 2,
-  handLuggageCapacity: 2,
   sortOrder: 0,
   status: "active",
   isDefault: false,
@@ -97,10 +96,9 @@ const CreateVehicleCategoryModel = ({ open, onClose }: CreateVehicleCategoryMode
 
             <Input name="description" type="textarea" label="Description" />
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input name="passengerCapacity" type="number" label="Passengers" min={1} />
               <Input name="luggageCapacity" type="number" label="Luggage" min={0} />
-              <Input name="handLuggageCapacity" type="number" label="Hand luggage" min={0} />
             </div>
 
             <Input

@@ -11,6 +11,7 @@ import {
   vehicleFareQuotesSearchSchema,
   type VehicleFareQuotesSearchSchema,
 } from "@/lib/schemas";
+import { DISTANCE_LABEL } from "@/lib/utils";
 
 const defaultValues = {
   distance: undefined,
@@ -62,7 +63,7 @@ const VehicleFareQuotesForm = ({
           <Input
             name="distance"
             type="number"
-            label="Distance (km)"
+            label={`Distance (${DISTANCE_LABEL})`}
             min={0}
             step="0.1"
           />

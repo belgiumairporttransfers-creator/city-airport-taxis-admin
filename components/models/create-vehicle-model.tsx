@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -29,8 +29,6 @@ const defaultValues: CreateVehicleFormSchema = {
   model: "",
   year: undefined,
   color: "",
-  passengerCapacity: 4,
-  luggageCapacity: 2,
   status: "active",
   notes: "",
   image: null,
@@ -113,7 +111,7 @@ const CreateVehicleModel = ({ open, onClose, categories }: CreateVehicleModelPro
         <DialogHeader>
           <DialogTitle>Add vehicle</DialogTitle>
           <DialogDescription>
-            Register a vehicle in your fleet with its category and capacity details.
+            Register a vehicle in your fleet with its category and details.
           </DialogDescription>
         </DialogHeader>
 
@@ -138,11 +136,6 @@ const CreateVehicleModel = ({ open, onClose, categories }: CreateVehicleModelPro
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input name="year" type="number" label="Year (optional)" />
               <Input name="color" label="Color (optional)" />
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input name="passengerCapacity" type="number" label="Passengers" />
-              <Input name="luggageCapacity" type="number" label="Luggage" />
             </div>
 
             <Input name="status" type="select" label="Status" options={statusOptions} />

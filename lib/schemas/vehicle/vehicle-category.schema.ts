@@ -10,7 +10,6 @@ export const vehicleCategorySchema = z.object({
   image: z.string().optional(),
   passengerCapacity: z.number(),
   luggageCapacity: z.number(),
-  handLuggageCapacity: z.number(),
   sortOrder: z.number(),
   status: vehicleCategoryStatusSchema,
   isDefault: z.boolean(),
@@ -43,7 +42,6 @@ export const createVehicleCategoryFormSchema = z.object({
   description: z.string().trim().max(2000).optional(),
   passengerCapacity: z.coerce.number().int().min(1, "At least 1 passenger").max(99),
   luggageCapacity: z.coerce.number().int().min(0).max(99),
-  handLuggageCapacity: z.coerce.number().int().min(0).max(99),
   sortOrder: z.coerce.number().int().min(0).default(0),
   status: vehicleCategoryStatusSchema.default("active"),
   isDefault: z.boolean().default(false),
@@ -63,7 +61,6 @@ export type CreateVehicleCategoryPayload = {
   image?: string;
   passengerCapacity: number;
   luggageCapacity: number;
-  handLuggageCapacity: number;
   sortOrder?: number;
   status?: VehicleCategoryStatus;
   isDefault?: boolean;
@@ -79,7 +76,6 @@ export type UpdateVehicleCategoryPayload = {
   image?: string;
   passengerCapacity?: number;
   luggageCapacity?: number;
-  handLuggageCapacity?: number;
   sortOrder?: number;
   status?: VehicleCategoryStatus;
   isDefault?: boolean;

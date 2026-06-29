@@ -99,12 +99,20 @@ export function getVehicleColumns({
     {
       accessorKey: "passengerCapacity",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Passengers" />,
-      cell: ({ row }) => row.getValue("passengerCapacity"),
+      cell: ({ row }) => (
+        <span className="text-default-600" title="Inherited from category">
+          {row.getValue("passengerCapacity")}
+        </span>
+      ),
     },
     {
       accessorKey: "luggageCapacity",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Luggage" />,
-      cell: ({ row }) => row.getValue("luggageCapacity"),
+      cell: ({ row }) => (
+        <span className="text-default-600" title="Inherited from category">
+          {row.getValue("luggageCapacity")}
+        </span>
+      ),
     },
     {
       accessorKey: "status",

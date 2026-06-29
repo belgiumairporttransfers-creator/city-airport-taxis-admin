@@ -8,20 +8,19 @@ export function cn(...inputs: ClassValue[]) {
 
 export { CURRENCY_SYMBOL };
 
-const DISTANCE_LABEL = "km";
+export const DISTANCE_LABEL = "km";
 
 function formatDistanceValue(value: number): string {
   if (!Number.isFinite(value)) return "0";
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
-/** Append km beside a numeric distance value. */
 export function formatDistance(value: number): string {
   const safeValue = Number.isFinite(value) ? Math.max(0, value) : 0;
   return `${formatDistanceValue(safeValue)} ${DISTANCE_LABEL}`;
 }
 
-/** Format a min–max distance range in km. */
+/** Format a min–max distance range. */
 export function formatDistanceRange(min: number, max: number | null): string {
   if (max === null) {
     return `${formatDistance(min)}+`;

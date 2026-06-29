@@ -26,7 +26,7 @@ export const vehiclePricingQuoteItemSchema = z.object({
   fare: z
     .object({
       slab: vehiclePricingSchema,
-      distanceKm: z.number(),
+      distance: z.number(),
       amount: z.number(),
     })
     .nullable(),
@@ -34,7 +34,7 @@ export const vehiclePricingQuoteItemSchema = z.object({
 });
 
 export const vehiclePricingQuotesResponseSchema = z.object({
-  distanceKm: z.number(),
+  distance: z.number(),
   items: z.array(vehiclePricingQuoteItemSchema),
 });
 

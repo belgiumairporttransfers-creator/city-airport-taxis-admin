@@ -51,8 +51,6 @@ export const vehicleFormSchema = z.object({
     z.number().int().min(1900).max(2100).optional()
   ),
   color: z.string().trim().max(40).optional(),
-  passengerCapacity: z.coerce.number().int().min(1, "At least 1 passenger").max(99),
-  luggageCapacity: z.coerce.number().int().min(0).max(99),
   status: vehicleStatusSchema.default("active"),
   notes: z.string().trim().max(5000).optional(),
   image: z.union([z.instanceof(File), z.null()]).optional(),
@@ -77,8 +75,6 @@ export type CreateVehiclePayload = {
   model: string;
   year?: number;
   color?: string;
-  passengerCapacity: number;
-  luggageCapacity: number;
   status?: VehicleStatus;
   notes?: string;
   image?: string;

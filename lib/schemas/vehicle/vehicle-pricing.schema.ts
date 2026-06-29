@@ -37,7 +37,7 @@ export const vehiclePricingSchema = z.object({
   maxDistance: z.number().nullable(),
   pricingType: vehiclePricingTypeSchema,
   priceAmount: z.number(),
-  perKmRate: z.number().optional(),
+  perUnitRate: z.number().optional(),
   increasePercentage: z.number().optional(),
   status: vehiclePricingStatusSchema,
   sortOrder: z.number(),
@@ -76,7 +76,7 @@ const pricingFormBaseSchema = z.object({
   priceAmount: requiredNumberSchema.refine((value) => !Number.isNaN(value), {
     message: "Price amount is required",
   }),
-  perKmRate: optionalNumberSchema,
+  perUnitRate: optionalNumberSchema,
   increasePercentage: optionalAdjustmentSchema,
   status: vehiclePricingStatusSchema.default("active"),
   sortOrder: z.preprocess(
@@ -108,11 +108,11 @@ const refinePricingForm = (
     }
   }
 
-  if (data.pricingType === "base_plus_per_unit" && data.perKmRate === undefined) {
+  if (data.pricingType === "base_plus_per_unit" && data.perUnitRate === undefined) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Per km rate is required for base + per km pricing",
-      path: ["perKmRate"],
+      message: "Per unit rate is required for base + per unit pricing",
+      path: ["perUnitRate"],
     });
   }
 
@@ -151,8 +151,8 @@ export const pricingStructureValidationSchema = z.object({
   ),
   gaps: z.array(
     z.object({
-      fromKm: z.number(),
-      toKm: z.number().nullable(),
+      fromDistance: z.number(),
+      toDistance: z.number().nullable(),
     })
   ),
   openEndedCount: z.number(),
@@ -172,7 +172,7 @@ export type CreateVehiclePricingPayload = {
   maxDistance: number | null;
   pricingType: VehiclePricingType;
   priceAmount: number;
-  perKmRate?: number | null;
+  perUnitRate?: number | null;
   increasePercentage?: number | null;
   status?: VehiclePricingStatus;
   sortOrder?: number;
@@ -187,8 +187,8 @@ export const toPricingPayload = (
   maxDistance: values.openEnded ? null : (values.maxDistance ?? null),
   pricingType: values.pricingType,
   priceAmount: values.priceAmount,
-  perKmRate:
-    values.pricingType === "base_plus_per_unit" ? values.perKmRate : null,
+  perUnitRate:
+    values.pricingType === "base_plus_per_unit" ? values.perUnitRate : null,
   increasePercentage: values.increasePercentage ?? null,
   status: values.status,
   sortOrder: values.sortOrder,
@@ -200,8 +200,8 @@ export const toPricingFormValues = (slab: VehiclePricing): UpdateVehiclePricingF
   maxDistance: slab.maxDistance ?? undefined,
   pricingType: slab.pricingType,
   priceAmount: slab.priceAmount,
-  perKmRate:
-    slab.pricingType === "base_plus_per_unit" ? slab.perKmRate : undefined,
+  perUnitRate:
+    slab.pricingType === "base_plus_per_unit" ? slab.perUnitRate : undefined,
   increasePercentage: slab.increasePercentage,
   status: slab.status,
   sortOrder: slab.sortOrder,

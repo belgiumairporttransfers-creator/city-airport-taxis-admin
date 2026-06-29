@@ -6,13 +6,14 @@ import {
   formatDistanceRange,
   formatPrice,
   formatPercent,
+  DISTANCE_LABEL,
 } from "@/lib/utils";
 import type { VehiclePricing, VehiclePricingQuoteItem, VehiclePricingType } from "@/lib/schemas";
 
 const pricingTypeLabels: Record<VehiclePricingType, string> = {
   fixed: "Fixed",
-  per_unit: "Per km",
-  base_plus_per_unit: "Base + per km",
+  per_unit: `Per ${DISTANCE_LABEL}`,
+  base_plus_per_unit: `Base + per ${DISTANCE_LABEL}`,
 };
 
 const formatSlabPrice = (slab: VehiclePricing) => {
@@ -21,15 +22,15 @@ const formatSlabPrice = (slab: VehiclePricing) => {
   const amount = formatPrice(slab.priceAmount);
 
   if (slab.pricingType === "per_unit") {
-    return `${amount}/km`;
+    return `${amount}/${DISTANCE_LABEL}`;
   }
 
   if (slab.pricingType === "base_plus_per_unit") {
-    if (slab.perKmRate === undefined || slab.perKmRate === null) {
+    if (slab.perUnitRate === undefined || slab.perUnitRate === null) {
       return amount;
     }
 
-    return `${amount} + ${formatPrice(slab.perKmRate)}/km`;
+    return `${amount} + ${formatPrice(slab.perUnitRate)}/${DISTANCE_LABEL}`;
   }
 
   return amount;

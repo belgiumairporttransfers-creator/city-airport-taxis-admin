@@ -185,7 +185,7 @@ const VehicleCategoriesPage = () => {
         }}
         onConfirm={handleConfirmDelete}
         title="Delete vehicle category?"
-        description={`This will permanently delete "${categoryToDelete?.name ?? "this category"}". Categories with assigned vehicles or pricing slabs cannot be deleted.`}
+        description={`This will permanently delete "${categoryToDelete?.name ?? "this category"}" and all of its vehicles and pricing slabs.`}
         confirmLabel="Delete"
         pendingLabel="Deleting..."
       />

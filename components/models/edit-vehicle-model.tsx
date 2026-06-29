@@ -80,8 +80,6 @@ const EditVehicleModel = ({ open, vehicle, onClose, categories }: EditVehicleMod
         model: vehicle.model,
         year: vehicle.year,
         color: vehicle.color ?? "",
-        passengerCapacity: vehicle.passengerCapacity,
-        luggageCapacity: vehicle.luggageCapacity,
         status: vehicle.status,
         notes: vehicle.notes ?? "",
         image: null,
@@ -156,11 +154,6 @@ const EditVehicleModel = ({ open, vehicle, onClose, categories }: EditVehicleMod
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input name="year" type="number" label="Year (optional)" />
               <Input name="color" label="Color (optional)" />
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Input name="passengerCapacity" type="number" label="Passengers" />
-              <Input name="luggageCapacity" type="number" label="Luggage" />
             </div>
 
             <Input name="status" type="select" label="Status" options={statusOptions} />

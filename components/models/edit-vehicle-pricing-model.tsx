@@ -23,11 +23,12 @@ import {
 } from "@/lib/schemas";
 import { useUpdateVehiclePricing, useVehicleCategoryPricing } from "@/hooks/queries/use-vehicle-pricing";
 import { validateSlabRange } from "@/lib/vehicle-pricing-range";
+import { DISTANCE_LABEL } from "@/lib/utils";
 
 const pricingTypeOptions = [
   { label: "Fixed fare", value: "fixed" },
-  { label: "Per km", value: "per_unit" },
-  { label: "Base + per km", value: "base_plus_per_unit" },
+  { label: `Per ${DISTANCE_LABEL}`, value: "per_unit" },
+  { label: `Base + per ${DISTANCE_LABEL}`, value: "base_plus_per_unit" },
 ];
 
 const statusOptions = [
@@ -57,7 +58,7 @@ const EditVehiclePricingModel = ({ open, slab, onClose }: EditVehiclePricingMode
 
   useEffect(() => {
     if (pricingType !== "base_plus_per_unit") {
-      form.setValue("perKmRate", undefined);
+      form.setValue("perUnitRate", undefined);
     }
   }, [pricingType, form]);
 
@@ -125,7 +126,7 @@ const EditVehiclePricingModel = ({ open, slab, onClose }: EditVehiclePricingMode
               <Input
                 name="minDistance"
                 type="number"
-                label="Minimum distance (km)"
+                label={`Minimum distance (${DISTANCE_LABEL})`}
                 min={0}
                 step="0.1"
               />
@@ -133,7 +134,7 @@ const EditVehiclePricingModel = ({ open, slab, onClose }: EditVehiclePricingMode
                 <Input
                   name="maxDistance"
                   type="number"
-                  label="Maximum distance (km)"
+                  label={`Maximum distance (${DISTANCE_LABEL})`}
                   min={maxDistanceMin}
                   step="0.1"
                 />
@@ -167,9 +168,9 @@ const EditVehiclePricingModel = ({ open, slab, onClose }: EditVehiclePricingMode
             {pricingType === "base_plus_per_unit" ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Input
-                  name="perKmRate"
+                  name="perUnitRate"
                   type="number"
-                  label="Per km rate"
+                  label={`Per ${DISTANCE_LABEL} rate`}
                   min={0}
                   step="0.01"
                 />

@@ -5,13 +5,13 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import type { DataTableFilterColumn } from "@/components/data-table/data-table-toolbar";
-import { formatDistanceRange, formatDate, formatPrice, formatPercent, formatTime } from "@/lib/utils";
+import { formatDistanceRange, formatDate, formatPrice, formatPercent, formatTime, DISTANCE_LABEL } from "@/lib/utils";
 import type { VehicleCategory, VehiclePricing, VehiclePricingType } from "@/lib/schemas";
 
 const pricingTypeLabels: Record<VehiclePricingType, string> = {
   fixed: "Fixed",
-  per_unit: "Per km",
-  base_plus_per_unit: "Base + per km",
+  per_unit: `Per ${DISTANCE_LABEL}`,
+  base_plus_per_unit: `Base + per ${DISTANCE_LABEL}`,
 };
 
 const statusClasses: Record<VehiclePricing["status"], string> = {
@@ -31,15 +31,15 @@ const formatPriceColumn = (slab: VehiclePricing) => {
   const amount = formatPrice(slab.priceAmount);
 
   if (slab.pricingType === "per_unit") {
-    return `${amount}/km`;
+    return `${amount}/${DISTANCE_LABEL}`;
   }
 
   if (slab.pricingType === "base_plus_per_unit") {
-    if (slab.perKmRate === undefined || slab.perKmRate === null) {
+    if (slab.perUnitRate === undefined || slab.perUnitRate === null) {
       return amount;
     }
 
-    return `${amount} + ${formatPrice(slab.perKmRate)}/km`;
+    return `${amount} + ${formatPrice(slab.perUnitRate)}/${DISTANCE_LABEL}`;
   }
 
   return amount;
