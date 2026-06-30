@@ -519,6 +519,44 @@ html[dir="rtl"] .react-select .select__loading-indicator {
   @apply text-sm px-3 py-2 text-default-900 font-normal;
 }
 
+.dash-tail-calendar td.fc-daygrid-day {
+  @apply cursor-pointer;
+}
+
+.dash-tail-calendar .fc-daygrid-day .fc-daygrid-day-frame {
+  @apply min-h-[7.5rem] h-full cursor-pointer transition-colors duration-150;
+}
+
+.dash-tail-calendar td.fc-daygrid-day:hover .fc-daygrid-day-frame {
+  @apply bg-default-100;
+}
+
+.dash-tail-calendar .fc-daygrid-day.fc-day-selected .fc-daygrid-day-frame {
+  @apply bg-warning/15 ring-1 ring-inset ring-warning/30;
+}
+
+.dash-tail-calendar td.fc-daygrid-day.fc-day-selected:hover .fc-daygrid-day-frame {
+  @apply bg-warning/25;
+}
+
+.dash-tail-calendar .fc-daygrid-day.fc-day-today:not(.fc-day-selected) .fc-daygrid-day-frame {
+  @apply bg-warning/10;
+}
+
+.dash-tail-calendar td.fc-daygrid-day.fc-day-today:not(.fc-day-selected):hover .fc-daygrid-day-frame {
+  @apply bg-default-100;
+}
+
+.dash-tail-calendar .fc-daygrid-day.fc-day-today.fc-day-selected .fc-daygrid-day-frame {
+  @apply bg-warning/20 ring-1 ring-inset ring-warning/40;
+}
+
+.dash-tail-calendar .fc-daygrid-event,
+.dash-tail-calendar .fc-daygrid-event-harness,
+.dash-tail-calendar .fc-daygrid-block-event {
+  @apply cursor-pointer;
+}
+
 .dash-tail-calendar .fc-h-event .fc-event-main-frame {
   @apply flex justify-center items-center text-center w-max mx-auto;
 }

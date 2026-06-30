@@ -1,4 +1,3 @@
-import { categories, events } from "./data";
 import CalendarView from "./calender-view";
 
 export const metadata = {
@@ -8,7 +7,7 @@ export const metadata = {
 const CalendarPage = () => {
   return (
     <div>
-      <CalendarView events={events} categories={categories} />
+      <CalendarView />
     </div>
   );
 };

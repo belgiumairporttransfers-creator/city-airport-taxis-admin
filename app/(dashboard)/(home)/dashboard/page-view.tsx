@@ -8,6 +8,7 @@ import UsersStat from "./components/users-stat";
 import ReportsArea from "./components/reports-area";
 import Transaction from "./components/transaction";
 import Orders from "./components/orders";
+import OperationsOverview from "./components/operations-overview";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const DashboardPageView = () => {
@@ -16,6 +17,7 @@ const DashboardPageView = () => {
       <div className="text-2xl font-medium text-default-800">
         Analytics Dashboard
       </div>
+      <OperationsOverview />
       {/* reports area */}
       <div className="grid grid-cols-12  gap-6 ">
         <div className="col-span-12 lg:col-span-8">

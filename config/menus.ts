@@ -19,6 +19,8 @@ import {
   VehiclePricing,
   Web,
   Grid,
+  Map,
+  Flag,
 } from "@/components/svg";
 import type { ComponentType } from "react";
 
@@ -119,6 +121,22 @@ export const menus: MenuItem[] = [
         title: "Add Driver",
         href: "/drivers/add",
         icon: UserPlus,
+      },
+    ],
+  },
+  {
+    title: "Operations",
+    icon: Map,
+    child: [
+      {
+        title: "Bookings",
+        href: "/trips",
+        icon: Flag,
+      },
+      {
+        title: "Payment History",
+        href: "/payments",
+        icon: ListFill,
       },
     ],
   },

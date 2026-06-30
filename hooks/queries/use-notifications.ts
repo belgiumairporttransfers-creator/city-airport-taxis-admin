@@ -147,8 +147,25 @@ export const useNotificationSocket = () => {
   useEffect(() => {
     const unsubscribe = subscribeNotificationSocket({
       onNew: (notification) => {
-        prependNotification(queryClient, notification);
-        void queryClient.invalidateQueries({ queryKey: NOTIFICATION_UNREAD_COUNT_QUERY_KEY });
+        void refreshNotificationQueries(queryClient);
+
+        if (notification.type === "booking.created") {
+          toast.success(notification.message, {
+            id: `notification-${notification.id}`,
+          });
+        }
+
+        if (notification.type === "assignment.accepted") {
+          toast.success(notification.message, {
+            id: `notification-${notification.id}`,
+          });
+        }
+
+        if (notification.type === "trip.completed") {
+          toast.success(notification.message, {
+            id: `notification-${notification.id}`,
+          });
+        }
       },
       onUpdated: (notification) => {
         prependNotification(queryClient, notification);

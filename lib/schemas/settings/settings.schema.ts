@@ -15,6 +15,7 @@ export const settingsSchema = z.object({
   returnMeetAndGreet: z.number().min(0),
   waitingTimePricePerMinute: z.number().min(0),
   waitingTimePricePerHour: z.number().min(0),
+  driverCommissionPercent: z.number().min(0).max(100),
 });
 
 export const settingsResponseSchema = z.object({
@@ -32,6 +33,7 @@ export const settingsResponseSchema = z.object({
   returnMeetAndGreet: z.number().min(0),
   waitingTimePricePerMinute: z.number().min(0),
   waitingTimePricePerHour: z.number().min(0),
+  driverCommissionPercent: z.number().min(0).max(100),
   updatedAt: z.string().optional(),
   createdAt: z.string().optional(),
 });
@@ -65,6 +67,10 @@ export const siteSettingsFormSchema = z.object({
   waitingTimePricePerHour: z.coerce
     .number()
     .min(0, "Driver waiting time price per hour cannot be negative"),
+  driverCommissionPercent: z.coerce
+    .number()
+    .min(0, "Driver commission cannot be negative")
+    .max(100, "Driver commission cannot exceed 100%"),
 });
 
 export type SiteSettingsFormSchema = z.infer<typeof siteSettingsFormSchema>;
@@ -84,6 +90,7 @@ export const toSettingsPayload = (
   returnMeetAndGreet: values.returnMeetAndGreet,
   waitingTimePricePerMinute: values.waitingTimePricePerMinute,
   waitingTimePricePerHour: values.waitingTimePricePerHour,
+  driverCommissionPercent: values.driverCommissionPercent,
 });
 
 export const fromSettingsResponse = (settings: Settings): SiteSettingsFormSchema => ({
@@ -99,4 +106,5 @@ export const fromSettingsResponse = (settings: Settings): SiteSettingsFormSchema
   returnMeetAndGreet: settings.returnMeetAndGreet ?? 0,
   waitingTimePricePerMinute: settings.waitingTimePricePerMinute ?? 0,
   waitingTimePricePerHour: settings.waitingTimePricePerHour ?? 0,
+  driverCommissionPercent: settings.driverCommissionPercent ?? 10,
 });

@@ -7,6 +7,7 @@ export interface CalendarEvent {
   allDay: boolean;
   extendedProps: {
     calendar: string;
+    bookingId: string;
   };
 }
 

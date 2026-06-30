@@ -21,6 +21,9 @@ const API_ROUTES = {
     DRIVERS: "/admin/drivers",
     NOTIFICATIONS: "/admin/notifications",
     COMMUNICATION: "/admin/communication",
+    TRIPS: "/admin/trips",
+    BOOKINGS: "/admin/bookings",
+    PAYMENTS: "/admin/payments",
     UPLOAD: "/upload",
 };
 

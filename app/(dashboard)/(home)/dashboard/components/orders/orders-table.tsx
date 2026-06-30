@@ -1,20 +1,13 @@
 "use client";
-import * as React from "react";
 
+import * as React from "react";
+import Link from "next/link";
 import {
   ColumnDef,
-  ColumnFiltersState,
-  RowSelectionState,
-  SortingState,
-  VisibilityState,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-
 import {
   Table,
   TableBody,
@@ -24,145 +17,141 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { data } from "./data";
-import { Icon } from "@iconify/react";
-import { cn } from "@/lib/utils";
+import { formatDate, formatPrice, formatTime } from "@/lib/utils";
+import { useBookings } from "@/hooks/queries/use-bookings";
+import type { Booking } from "@/lib/schemas";
 
-interface DataItem {
-  invoice: string;
-  username: string;
-  date: string;
-  amount: string;
-  isComplete: boolean;
-}
+const EUR_SYMBOL = "€";
 
-const columns: ColumnDef<DataItem>[] = [
+const paymentStatusLabels: Record<string, string> = {
+  paid: "Completed",
+  pending: "Pending",
+  failed: "Failed",
+  cancelled: "Cancelled",
+};
+
+const paymentStatusClasses: Record<string, string> = {
+  paid: "bg-success/10 text-success",
+  pending: "bg-warning/10 text-warning",
+  failed: "bg-destructive/10 text-destructive",
+  cancelled: "bg-default-100 text-default-600",
+};
+
+const columns: ColumnDef<Booking>[] = [
   {
-    accessorKey: "invoice",
-    header: "Invoice",
-    cell: ({ row }) => <span>{row.getValue("invoice")}</span>,
-  },
-  {
-    accessorKey: "username",
-    header: "Username",
+    id: "booking",
+    header: "Booking",
     cell: ({ row }) => (
-      <span className="whitespace-nowrap">{row.getValue("username")}</span>
+      <Link
+        href={`/bookings/${row.original.id}`}
+        className="font-medium text-primary hover:underline"
+      >
+        {row.original.bookingNumber}
+      </Link>
     ),
   },
   {
-    accessorKey: "date",
+    id: "customer",
+    header: "Customer",
+    cell: ({ row }) => (
+      <span className="whitespace-nowrap">
+        {row.original.customer.firstName} {row.original.customer.lastName}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "createdAt",
     header: "Date",
-    cell: ({ row }) => (
-      <span className="whitespace-nowrap">{row.getValue("date")}</span>
-    ),
+    cell: ({ row }) => {
+      const value = row.getValue("createdAt") as string;
+      return (
+        <span className="whitespace-nowrap">
+          {formatDate(value)} {formatTime(value)}
+        </span>
+      );
+    },
   },
   {
-    accessorKey: "amount",
+    id: "amount",
     header: "Amount",
-    cell: ({ row }) => <span>{row.getValue("amount")}</span>,
+    cell: ({ row }) => (
+      <span>{formatPrice(row.original.pricing.total, EUR_SYMBOL)}</span>
+    ),
   },
   {
-    accessorKey: "isComplete",
+    id: "paymentStatus",
     header: "Order Status",
-    cell: ({ row }) => (
-      <div className="whitespace-nowrap">
-        {row.getValue("isComplete") === true ? (
-          <span className="inline-block px-3 py-[2px] rounded-2xl bg-success/10 text-xs text-success">
-            Completed
-          </span>
-        ) : (
-          <span className="inline-block px-3 py-[2px] rounded-2xl bg-warning/10 text-xs text-warning">
-            {" "}
-            Pending
-          </span>
-        )}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const status = row.original.payment.paymentStatus;
+      return (
+        <span
+          className={`inline-block rounded-2xl px-3 py-[2px] text-xs ${
+            paymentStatusClasses[status] ?? "bg-default-100 text-default-600"
+          }`}
+        >
+          {paymentStatusLabels[status] ?? status}
+        </span>
+      );
+    },
   },
 ];
 
 const OrdersTable = () => {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
-
+  const { data, isLoading } = useBookings({ page: 1, limit: 8 });
   const table = useReactTable({
-    data,
+    data: data?.items ?? [],
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-    },
   });
 
   return (
     <>
-      <div className=" overflow-x-auto ">
-        <div className="h-full w-full overflow-auto no-scrollbar">
+      <div className="overflow-x-auto">
+        <div className="no-scrollbar h-full w-full overflow-auto">
           <Table>
             <TableHeader className="bg-default-300">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead
-                        key={header.id}
-                        className="text-sm font-semibold text-default-600 h-12 last:text-end whitespace-nowrap"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    );
-                  })}
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className="h-12 whitespace-nowrap text-sm font-semibold text-default-600 last:text-end"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
                 </TableRow>
               ))}
             </TableHeader>
             <TableBody className="[&_tr:last-child]:border-1">
-              {table.getRowModel().rows?.length ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    Loading recent orders...
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="hover:bg-default-50 border-border"
+                    className="border-border hover:bg-default-50"
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell
                         key={cell.id}
-                        className="text-sm text-default-600 py-3 last:text-end "
+                        className="py-3 text-sm text-default-600 last:text-end"
                       >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    No recent orders.
                   </TableCell>
                 </TableRow>
               )}
@@ -171,45 +160,13 @@ const OrdersTable = () => {
         </div>
       </div>
 
-      <div className="flex justify-center  items-center gap-2 mt-5">
-        <Button
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-          className="w-7 h-7 p-0 bg-default-100 hover:bg-default-200 text-default-600"
-        >
-          <Icon
-            icon="heroicons:chevron-left"
-            className="w-3.5 h-3.5 rtl:rotate-180 "
-          />
-        </Button>
-
-        {table.getPageOptions().map((page, pageIdx) => (
-          <Button
-            onClick={() => table.setPageIndex(pageIdx)}
-            key={`orders-table-${pageIdx}`}
-            className={cn(
-              "w-7 h-7 p-0 bg-default-100 hover:bg-default-200 text-default-600",
-              {
-                "bg-primary text-primary-foreground":
-                  pageIdx === table.getState().pagination.pageIndex,
-              }
-            )}
-          >
-            {page + 1}
+      {data?.meta && data.meta.total > 8 ? (
+        <div className="mt-5 flex justify-center">
+          <Button asChild size="sm" variant="outline">
+            <Link href="/trips">View all bookings</Link>
           </Button>
-        ))}
-
-        <Button
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-          className="w-7 h-7 p-0 bg-default-100 hover:bg-default-200 text-default-600"
-        >
-          <Icon
-            icon="heroicons:chevron-right"
-            className="w-3.5 h-3.5 rtl:rotate-180"
-          />
-        </Button>
-      </div>
+        </div>
+      ) : null}
     </>
   );
 };

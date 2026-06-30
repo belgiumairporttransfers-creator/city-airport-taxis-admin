@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Clock, CreditCard, Settings2 } from "lucide-react";
+import { Clock, CreditCard, Settings2, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -33,6 +33,7 @@ const defaultValues: SiteSettingsFormSchema = {
   returnMeetAndGreet: 0,
   waitingTimePricePerMinute: 0,
   waitingTimePricePerHour: 0,
+  driverCommissionPercent: 10,
 };
 
 const SiteSettingsForm = () => {
@@ -140,6 +141,25 @@ const SiteSettingsForm = () => {
                   />
                 </div>
               </div>
+            </div>
+          </SettingsSection>
+
+          <SettingsSection
+            icon={Users}
+            title="Driver commission"
+            description="Percentage deducted from each trip fare before the driver is paid. Drivers only see their net earning."
+          >
+            <div className="grid grid-cols-1 gap-3 py-3 sm:grid-cols-2 lg:grid-cols-3">
+              <FeeRow
+                variant="card"
+                name="driverCommissionPercent"
+                title="Commission deducted"
+                description="Example: 10% on a €50 trip means the driver earns €45."
+                label="Rate (%)"
+                max={100}
+                step={0.01}
+                placeholder="10"
+              />
             </div>
           </SettingsSection>
 
