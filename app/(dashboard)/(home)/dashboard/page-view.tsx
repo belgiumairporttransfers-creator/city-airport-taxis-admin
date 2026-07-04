@@ -17,7 +17,7 @@ const DashboardPageView = () => {
       <div className="text-2xl font-medium text-default-800">
         Analytics Dashboard
       </div>
-      <OperationsOverview />
+      {/* <OperationsOverview /> */}
       {/* reports area */}
       <div className="grid grid-cols-12  gap-6 ">
         <div className="col-span-12 lg:col-span-8">
@@ -28,10 +28,10 @@ const DashboardPageView = () => {
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ReportsArea />
-        </div>
-        <Card>
+        </div> */}
+        {/* <Card>
           <CardHeader className="border-none p-6 pt-5 mb-0">
             <CardTitle className="text-lg font-semibold text-default-900 p-0">
               New vs Returning Visitors
@@ -40,8 +40,8 @@ const DashboardPageView = () => {
           <CardContent>
             <UserStats />
           </CardContent>
-        </Card>
-        <Card>
+        </Card> */}
+        {/* <Card>
           <CardHeader className="border-none p-6 pt-5 mb-0">
             <CardTitle className="text-lg font-semibold text-default-900 p-0">
               Device Breakdown
@@ -52,7 +52,7 @@ const DashboardPageView = () => {
               <UserDeviceReport />
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 lg:col-span-4">
