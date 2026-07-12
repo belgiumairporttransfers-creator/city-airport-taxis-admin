@@ -6,29 +6,16 @@ import { useThemeStore } from "@/store";
 import { useTheme } from "next-themes";
 import { themes } from "@/config/thems";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
+import { useAdminDashboard } from "@/hooks/queries/use-dashboard";
 
-const allUsersSeries = [
-  {
-    data: [90, 70, 85, 60, 80, 70, 90, 75, 60, 80],
-  },
-];
-const conversationSeries = [
-  {
-    data: [80, 70, 65, 40, 40, 100, 100, 75, 60, 80],
-  },
-];
-const eventCountSeries = [
-  {
-    data: [20, 70, 65, 60, 40, 60, 90, 75, 60, 40],
-  },
-];
-const newUserSeries = [
-  {
-    data: [20, 70, 65, 40, 100, 60, 100, 75, 60, 80],
-  },
-];
+const EMPTY_SERIES = [{ data: Array.from({ length: 10 }, () => 0) }];
+
+const formatCount = (value: number) =>
+  new Intl.NumberFormat("en-US").format(value);
+
 const ReportsSnapshot = () => {
+  const { data, isLoading } = useAdminDashboard();
   const { theme: config } = useThemeStore();
   const { theme: mode } = useTheme();
   const theme = themes.find((theme) => theme.name === config);
@@ -38,54 +25,61 @@ const ReportsSnapshot = () => {
   const success = `hsl(${theme?.cssVars[mode === "dark" ? "dark" : "light"].success})`;
   const info = `hsl(${theme?.cssVars[mode === "dark" ? "dark" : "light"].info})`;
 
+  const totals = data?.totals;
+  const series = data?.series;
+
   const tabsTrigger = [
     {
-      value: "all",
-      text: "all user",
-      total: "10,234",
+      value: "revenue",
+      text: "Total Amount",
+      total: isLoading ? "…" : formatPrice(totals?.revenue ?? 0),
       color: "primary",
     },
     {
-      value: "event",
-      text: "Event Count",
-      total: "536",
+      value: "users",
+      text: "Total Users",
+      total: isLoading ? "…" : formatCount(totals?.users ?? 0),
       color: "warning",
     },
     {
-      value: "conversation",
-      text: "conversations",
-      total: "21",
+      value: "drivers",
+      text: "Total Drivers",
+      total: isLoading ? "…" : formatCount(totals?.drivers ?? 0),
       color: "success",
     },
     {
-      value: "newuser",
-      text: "New User",
-      total: "3321",
+      value: "bookings",
+      text: "Completed Bookings",
+      total: isLoading ? "…" : formatCount(totals?.completedBookings ?? 0),
       color: "info",
     },
   ];
+
   const tabsContentData = [
     {
-      value: "all",
-      series: allUsersSeries,
+      value: "revenue",
+      series: series?.revenue ? [{ data: series.revenue }] : EMPTY_SERIES,
       color: primary,
     },
     {
-      value: "event",
-      series: eventCountSeries,
+      value: "users",
+      series: series?.users ? [{ data: series.users }] : EMPTY_SERIES,
       color: warning,
     },
     {
-      value: "conversation",
-      series: conversationSeries,
+      value: "drivers",
+      series: series?.drivers ? [{ data: series.drivers }] : EMPTY_SERIES,
       color: success,
     },
     {
-      value: "newuser",
-      series: newUserSeries,
+      value: "bookings",
+      series: series?.completedBookings
+        ? [{ data: series.completedBookings }]
+        : EMPTY_SERIES,
       color: info,
     },
   ];
+
   return (
     <Card>
       <CardHeader className="border-none pb-0">
@@ -93,11 +87,11 @@ const ReportsSnapshot = () => {
           Reports Snapshot
         </div>
         <span className="text-xs text-default-600">
-          Demographic properties of your customer
+          Overview of revenue, users, drivers, and completed bookings
         </span>
       </CardHeader>
       <CardContent className="p-1 md:p-5">
-        <Tabs defaultValue="all">
+        <Tabs defaultValue="revenue">
           <TabsList className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6 justify-start w-full bg-transparent h-full">
             {tabsTrigger.map((item, index) => (
               <TabsTrigger
@@ -125,7 +119,6 @@ const ReportsSnapshot = () => {
                   )}
                 ></span>
                 <span className="text-sm text-default-800 dark:text-primary-foreground font-semibold capitalize relative z-10">
-                  {" "}
                   {item.text}
                 </span>
                 <span className={`text-lg font-semibold text-${item.color}/80 dark:text-primary-foreground`}>
@@ -134,7 +127,6 @@ const ReportsSnapshot = () => {
               </TabsTrigger>
             ))}
           </TabsList>
-          {/* charts data */}
           {tabsContentData.map((item, index) => (
             <TabsContent key={`report-tab-${index}`} value={item.value}>
               <ReportsChart series={item.series} chartColor={item.color} />

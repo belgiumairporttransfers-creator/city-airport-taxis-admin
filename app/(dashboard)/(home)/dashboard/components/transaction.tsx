@@ -1,135 +1,200 @@
+"use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import img1 from "@/public/images/avatar/avatar-7.jpg";
-import img2 from "@/public/images/avatar/avatar-2.jpg";
-import img3 from "@/public/images/avatar/avatar-3.jpg";
-import img4 from "@/public/images/avatar/avatar-4.jpg";
-import img5 from "@/public/images/avatar/avatar-5.jpg";
-import img6 from "@/public/images/avatar/avatar-6.jpg";
-import { Fragment } from 'react';
-import { StaticImageData } from 'next/image';
+import Link from "next/link";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { formatDate, formatPrice, formatTime } from "@/lib/utils";
+import { useAdminDashboard } from "@/hooks/queries/use-dashboard";
 
-type DataItem = {
-  id: number;
+type AdminPayment = {
+  id: string;
   name: string;
-  customerId: string;
-  amount: string;
-  image: StaticImageData;
+  reference: string;
+  amount: number;
+  currency: string;
+  status: string;
+  createdAt: string;
 };
-const data: DataItem[] = [
+
+const statusLabels: Record<string, string> = {
+  paid: "Completed",
+  pending: "Pending",
+  failed: "Failed",
+  cancelled: "Cancelled",
+  refunded: "Refunded",
+  partially_refunded: "Partial Refund",
+  expired: "Expired",
+};
+
+const statusClasses: Record<string, string> = {
+  paid: "bg-success/10 text-success",
+  pending: "bg-warning/10 text-warning",
+  failed: "bg-destructive/10 text-destructive",
+  cancelled: "bg-default-100 text-default-600",
+  refunded: "bg-info/10 text-info",
+  partially_refunded: "bg-info/10 text-info",
+  expired: "bg-default-100 text-default-600",
+};
+
+const columns: ColumnDef<AdminPayment>[] = [
   {
-    id: 1,
-    name: "Chester Bass",
-    customerId: "#546936",
-    amount: "8863",
-    image: img1,
+    accessorKey: "reference",
+    header: "Booking",
+    cell: ({ row }) => (
+      <span className="font-medium text-primary whitespace-nowrap">
+        {row.original.reference}
+      </span>
+    ),
   },
   {
-    id: 2,
-    name: "Chester Bass",
-    customerId: "#546936",
-    amount: "8863",
-    image: img2,
+    accessorKey: "name",
+    header: "Customer",
+    cell: ({ row }) => (
+      <span className="whitespace-nowrap">{row.getValue("name")}</span>
+    ),
   },
   {
-    id: 3,
-    name: "Chester Bass",
-    customerId: "#546936",
-    amount: "8863",
-    image: img3,
+    accessorKey: "createdAt",
+    header: "Date",
+    cell: ({ row }) => {
+      const value = row.getValue("createdAt") as string;
+      return (
+        <span className="whitespace-nowrap">
+          {formatDate(value)} {formatTime(value)}
+        </span>
+      );
+    },
   },
   {
-    id: 4,
-    name: "Chester Bass",
-    customerId: "#546936",
-    amount: "8863",
-    image: img4,
+    accessorKey: "amount",
+    header: "Amount",
+    cell: ({ row }) => (
+      <span className="whitespace-nowrap">
+        {formatPrice(row.original.amount)}
+      </span>
+    ),
   },
   {
-    id: 5,
-    name: "Chester Bass",
-    customerId: "#546936",
-    amount: "8863",
-    image: img5,
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = row.original.status;
+      return (
+        <span
+          className={`inline-block rounded-2xl px-3 py-[2px] text-xs ${
+            statusClasses[status] ?? "bg-default-100 text-default-600"
+          }`}
+        >
+          {statusLabels[status] ?? status}
+        </span>
+      );
+    },
   },
-  {
-    id: 6,
-    name: "Chester Bass",
-    customerId: "#546936",
-    amount: "8863",
-    image: img6,
-  },
-  {
-    id: 7,
-    name: "Chester Bass",
-    customerId: "#546936",
-    amount: "8863",
-    image: img4,
-  },
-  {
-    id: 8,
-    name: "Chester Bass",
-    customerId: "#546936",
-    amount: "8863",
-    image: img5,
-  },
-  {
-    id: 9,
-    name: "Chester Bass",
-    customerId: "#546936",
-    amount: "8863",
-    image: img6,
-  },
-  {
-    id: 10,
-    name: "Chester Bass",
-    customerId: "#546936",
-    amount: "8863",
-    image: img4,
-  },
-  {
-    id: 11,
-    name: "Chester Bass",
-    customerId: "#546936",
-    amount: "8863",
-    image: img5,
-  },
-  {
-    id: 12,
-    name: "Chester Bass",
-    customerId: "#546936",
-    amount: "8863",
-    image: img6,
-  }
 ];
 
-
 const Transaction = () => {
+  const { data, isLoading } = useAdminDashboard();
+  const table = useReactTable({
+    data: data?.payments ?? [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   return (
-    <Fragment>
-      {
-        data.map((item, index) => (
-          <li
-            key={`transaction-${index}`}
-            className='flex justify-between items-center gap-2 py-3 px-6 hover:bg-default-50'
-          >
-            <div className='flex items-center gap-3'>
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={item.image.src} alt="" />
-                <AvatarFallback>{item.name}</AvatarFallback>
-              </Avatar>
-              <div className='flex flex-col gap-1'>
-                <span className='text-sm font-medium text-default-700'> {item.name}</span>
-                <span className='text-xs font-medium text-default-600'>{item.customerId}</span>
-              </div>
-            </div>
-            <span className='text-sm font-medium text-primary-500'>${item.amount}</span>
-          </li>
-        ))
-      }
-    </Fragment>
+    <Card>
+      <CardHeader className="mb-0 p-6">
+        <CardTitle>Transaction History</CardTitle>
+      </CardHeader>
+      <CardContent className="px-0">
+        <div className="overflow-x-auto">
+          <div className="h-full w-full overflow-auto no-scrollbar">
+            <Table>
+              <TableHeader className="bg-default-300">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead
+                        key={header.id}
+                        className="text-sm font-semibold text-default-600 h-12 last:text-end whitespace-nowrap"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody className="[&_tr:last-child]:border-1">
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
+                      Loading payments...
+                    </TableCell>
+                  </TableRow>
+                ) : table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      className="hover:bg-default-50 border-border"
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          className="text-sm text-default-600 py-3 last:text-end"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
+                      No payments yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
 
+        {(data?.payments?.length ?? 0) > 0 ? (
+          <div className="mt-5 flex justify-center">
+            <Button asChild size="sm" variant="outline">
+              <Link href="/payments">View all payments</Link>
+            </Button>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 };
 

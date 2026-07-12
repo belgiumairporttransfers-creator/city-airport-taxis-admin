@@ -1,5 +1,6 @@
 export * from "./auth";
 export * from "./booking";
+export * from "./dashboard";
 export * from "./driver";
 export * from "./newsletter";
 export * from "./notification";
