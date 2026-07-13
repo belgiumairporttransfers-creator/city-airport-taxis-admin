@@ -21,8 +21,6 @@ import { formatDate, formatPrice, formatTime } from "@/lib/utils";
 import { useBookings } from "@/hooks/queries/use-bookings";
 import type { Booking } from "@/lib/schemas";
 
-const EUR_SYMBOL = "€";
-
 const paymentStatusLabels: Record<string, string> = {
   paid: "Completed",
   pending: "Pending",
@@ -75,7 +73,7 @@ const columns: ColumnDef<Booking>[] = [
     id: "amount",
     header: "Amount",
     cell: ({ row }) => (
-      <span>{formatPrice(row.original.pricing.total, EUR_SYMBOL)}</span>
+      <span>{formatPrice(row.original.pricing.total)}</span>
     ),
   },
   {
