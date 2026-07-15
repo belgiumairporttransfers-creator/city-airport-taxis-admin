@@ -13,6 +13,7 @@ export const vehicleCategorySchema = z.object({
   sortOrder: z.number(),
   status: vehicleCategoryStatusSchema,
   isDefault: z.boolean(),
+  requestForQuote: z.boolean(),
   createdBy: z.string().optional(),
   updatedBy: z.string().optional(),
   createdAt: z.string(),
@@ -45,6 +46,7 @@ export const createVehicleCategoryFormSchema = z.object({
   sortOrder: z.coerce.number().int().min(0).default(0),
   status: vehicleCategoryStatusSchema.default("active"),
   isDefault: z.boolean().default(false),
+  requestForQuote: z.boolean().default(false),
   image: z.union([z.instanceof(File), z.null()]).optional(),
 });
 
@@ -64,6 +66,7 @@ export type CreateVehicleCategoryPayload = {
   sortOrder?: number;
   status?: VehicleCategoryStatus;
   isDefault?: boolean;
+  requestForQuote?: boolean;
 };
 
 export const updateVehicleCategoryFormSchema = createVehicleCategoryFormSchema;
@@ -79,4 +82,5 @@ export type UpdateVehicleCategoryPayload = {
   sortOrder?: number;
   status?: VehicleCategoryStatus;
   isDefault?: boolean;
+  requestForQuote?: boolean;
 };

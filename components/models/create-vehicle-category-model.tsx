@@ -29,6 +29,7 @@ const defaultValues: CreateVehicleCategoryFormSchema = {
   sortOrder: 0,
   status: "active",
   isDefault: false,
+  requestForQuote: false,
   image: null,
 };
 
@@ -131,6 +132,16 @@ const CreateVehicleCategoryModel = ({ open, onClose }: CreateVehicleCategoryMode
                 </p>
               </div>
               <Input name="isDefault" type="switch" switchSize="md" className="shrink-0" />
+            </div>
+
+            <div className="flex items-center justify-between gap-4 rounded-md border border-border px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-default-900">Request for quote</p>
+                <p className="mt-0.5 text-xs text-default-500">
+                  Show a request quote action instead of instant booking prices.
+                </p>
+              </div>
+              <Input name="requestForQuote" type="switch" switchSize="md" className="shrink-0" />
             </div>
 
             <DialogFooter>

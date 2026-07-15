@@ -88,6 +88,11 @@ export function getVehicleCategoryColumns({
       cell: ({ row }) => (row.original.isDefault ? "Yes" : "—"),
     },
     {
+      accessorKey: "requestForQuote",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Request quote" />,
+      cell: ({ row }) => (row.original.requestForQuote ? "Yes" : "—"),
+    },
+    {
       accessorKey: "createdAt",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
       cell: ({ row }) => formatDate(row.getValue("createdAt")),
