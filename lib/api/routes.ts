@@ -17,6 +17,7 @@ const API_ROUTES = {
     NEWSLETTER_CAMPAIGN_RECIPIENTS: "/admin/newsletter-campaign-recipients",
     VEHICLE_CATEGORIES: "/admin/vehicle-categories",
     VEHICLE_PRICING: "/admin/vehicle-pricing",
+    HOURLY_PRICING: "/admin/hourly-pricing",
     VEHICLES: "/admin/vehicles",
     DRIVERS: "/admin/drivers",
     NOTIFICATIONS: "/admin/notifications",

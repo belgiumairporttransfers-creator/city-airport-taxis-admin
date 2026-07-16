@@ -102,6 +102,11 @@ export const menus: MenuItem[] = [
         icon: VehiclePricing,
       },
       {
+        title: "Hourly Pricing",
+        href: "/hourly-pricing",
+        icon: VehiclePricing,
+      },
+      {
         title: "check fare quotes",
         href: "/vehicle-fare-quotes",
         icon: FareQuote,
