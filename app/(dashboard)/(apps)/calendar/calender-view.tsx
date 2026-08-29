@@ -14,7 +14,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import LayoutLoader from "@/components/layout-loader";
-import { bookingStatusCategories } from "./data";
+import { bookingTypeCategories, bookingTypeColorClass } from "./data";
 import { bookingsToCalendarEvents } from "./booking-calendar";
 import { useCalendarBookings } from "@/hooks/queries/use-bookings";
 
@@ -26,9 +26,9 @@ const isSameDay = (left: Date, right: Date) =>
 const CalendarView = () => {
   const router = useRouter();
   const calendarRef = useRef<React.ComponentRef<typeof FullCalendar>>(null);
-  const categories = bookingStatusCategories;
-  const [selectedCategory, setSelectedCategory] = useState<string[]>(() =>
-    bookingStatusCategories.map((category) => category.value)
+  const typeCategories = bookingTypeCategories;
+  const [selectedType, setSelectedType] = useState<string[]>(() =>
+    bookingTypeCategories.map((category) => category.value)
   );
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
@@ -48,6 +48,14 @@ const CalendarView = () => {
     [data?.items]
   );
 
+  const filteredEvents = useMemo(
+    () =>
+      events.filter((event) =>
+        selectedType.includes(event.extendedProps.tripType ?? "one-way")
+      ),
+    [events, selectedType]
+  );
+
   const handleEventClick = (arg: EventClickArg) => {
     arg.jsEvent.stopPropagation();
     const bookingId = arg.event.extendedProps.bookingId as string | undefined;
@@ -63,36 +71,18 @@ const CalendarView = () => {
   const handleDayCellClassNames = (arg: DayCellContentArg) =>
     isSameDay(arg.date, selectedDate) ? ["fc-day-selected"] : [];
 
-  const handleCategorySelection = (category: string) => {
-    if (selectedCategory?.includes(category)) {
-      setSelectedCategory(selectedCategory.filter((value) => value !== category));
-    } else {
-      setSelectedCategory([...(selectedCategory ?? []), category]);
-    }
+  const toggleType = (value: string) => {
+    setSelectedType((selected) =>
+      selected.includes(value)
+        ? selected.filter((item) => item !== value)
+        : [...selected, value]
+    );
   };
 
   const handleClassName = (arg: EventContentArg) => {
-    const status = arg.event.extendedProps.calendar as string;
-
-    switch (status) {
-      case "pending":
-        return "warning";
-      case "confirmed":
-        return "primary";
-      case "accepted":
-        return "info";
-      case "complete":
-        return "success";
-      case "cancelled":
-        return "destructive";
-      default:
-        return "primary";
-    }
+    const tripType = (arg.event.extendedProps.tripType as string | undefined) ?? "one-way";
+    return bookingTypeColorClass[tripType] ?? "primary";
   };
-
-  const filteredEvents = events.filter((event) =>
-    selectedCategory?.includes(event.extendedProps.calendar)
-  );
 
   if (isLoading) {
     return <LayoutLoader />;
@@ -111,32 +101,33 @@ const CalendarView = () => {
               className="w-full rounded-md border border-border border-none p-0"
             />
           </div>
+
           <div className="mt-4 px-4 py-4 text-xs font-semibold uppercase text-default-800">
-            Filter by status
+            Filter by type
           </div>
           <ul className="space-y-2 px-4">
             <li className="flex gap-3">
               <Checkbox
-                checked={selectedCategory?.length === categories.length}
+                checked={selectedType.length === typeCategories.length}
                 onClick={() => {
-                  if (selectedCategory?.length === categories.length) {
-                    setSelectedCategory([]);
+                  if (selectedType.length === typeCategories.length) {
+                    setSelectedType([]);
                   } else {
-                    setSelectedCategory(categories.map((category) => category.value));
+                    setSelectedType(typeCategories.map((category) => category.value));
                   }
                 }}
               />
               <Label>All</Label>
             </li>
-            {categories.map((category) => (
+            {typeCategories.map((category) => (
               <li className="flex gap-3" key={category.value}>
                 <Checkbox
                   className={category.className}
-                  id={category.label}
-                  checked={selectedCategory?.includes(category.value)}
-                  onClick={() => handleCategorySelection(category.value)}
+                  id={`type-${category.value}`}
+                  checked={selectedType.includes(category.value)}
+                  onClick={() => toggleType(category.value)}
                 />
-                <Label htmlFor={category.label}>{category.label}</Label>
+                <Label htmlFor={`type-${category.value}`}>{category.label}</Label>
               </li>
             ))}
           </ul>
@@ -161,6 +152,8 @@ const CalendarView = () => {
             selectable={false}
             droppable={false}
             dayMaxEvents={3}
+            displayEventTime
+            eventDisplay="block"
             weekends
             eventClassNames={handleClassName}
             eventClick={handleEventClick}

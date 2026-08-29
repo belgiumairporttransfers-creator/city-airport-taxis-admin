@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import ConfirmationDialog from "@/components/confirmation-dialog";
 import {
   useApproveDriverApplication,
+  useDeleteDriverApplication,
+  useReactivateDriverApplication,
   useRejectDriverApplication,
   useRequestDriverChanges,
   useStartDriverReview,
@@ -27,9 +30,11 @@ type DriverProfileActionsProps = {
 };
 
 type NotesAction = "reject" | "request-changes" | "suspend";
+type ConfirmAction = "start-review" | "approve" | "reactivate" | "delete";
 
 const DriverProfileActions = ({ driver }: DriverProfileActionsProps) => {
-  const [confirmAction, setConfirmAction] = useState<"start-review" | "approve" | null>(null);
+  const router = useRouter();
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [notesAction, setNotesAction] = useState<NotesAction | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
 
@@ -38,13 +43,17 @@ const DriverProfileActions = ({ driver }: DriverProfileActionsProps) => {
   const reject = useRejectDriverApplication(driver.id);
   const requestChanges = useRequestDriverChanges(driver.id);
   const suspend = useSuspendDriverApplication(driver.id);
+  const reactivate = useReactivateDriverApplication(driver.id);
+  const deleteDriver = useDeleteDriverApplication(driver.id);
 
   const isPending =
     startReview.isPending ||
     approve.isPending ||
     reject.isPending ||
     requestChanges.isPending ||
-    suspend.isPending;
+    suspend.isPending ||
+    reactivate.isPending ||
+    deleteDriver.isPending;
 
   const resetNotesDialog = () => {
     setNotesAction(null);
@@ -71,13 +80,23 @@ const DriverProfileActions = ({ driver }: DriverProfileActionsProps) => {
 
   const actionsByStatus: Record<DriverApplicationStatus, React.ReactNode> = {
     pending: (
-      <Button
-        size="sm"
-        disabled={isPending}
-        onClick={() => setConfirmAction("start-review")}
-      >
-        Start Review
-      </Button>
+      <>
+        <Button
+          size="sm"
+          disabled={isPending}
+          onClick={() => setConfirmAction("start-review")}
+        >
+          Start Review
+        </Button>
+        <Button
+          size="sm"
+          color="destructive"
+          disabled={isPending}
+          onClick={() => setConfirmAction("delete")}
+        >
+          Delete Permanently
+        </Button>
+      </>
     ),
     under_review: (
       <>
@@ -127,7 +146,26 @@ const DriverProfileActions = ({ driver }: DriverProfileActionsProps) => {
       </Button>
     ),
     rejected: null,
-    suspended: null,
+    suspended: (
+      <>
+        <Button
+          size="sm"
+          color="success"
+          disabled={isPending}
+          onClick={() => setConfirmAction("reactivate")}
+        >
+          Reactivate
+        </Button>
+        <Button
+          size="sm"
+          color="destructive"
+          disabled={isPending}
+          onClick={() => setConfirmAction("delete")}
+        >
+          Delete Permanently
+        </Button>
+      </>
+    ),
   };
 
   const visibleActions = actionsByStatus[driver.status];
@@ -190,6 +228,31 @@ const DriverProfileActions = ({ driver }: DriverProfileActionsProps) => {
         description={`Approve ${driver.firstName} ${driver.lastName} and create their driver account? A password setup email will be sent.`}
         confirmLabel="Approve"
         pendingLabel="Approving..."
+      />
+
+      <ConfirmationDialog
+        open={confirmAction === "reactivate"}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={async () => {
+          await reactivate.mutateAsync();
+        }}
+        title="Reactivate Driver"
+        description={`Reactivate ${driver.firstName} ${driver.lastName}'s account? They will regain access to the driver portal.`}
+        confirmLabel="Reactivate"
+        pendingLabel="Reactivating..."
+      />
+
+      <ConfirmationDialog
+        open={confirmAction === "delete"}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={async () => {
+          await deleteDriver.mutateAsync();
+          router.push("/drivers");
+        }}
+        title="Delete Driver Permanently"
+        description={`Permanently delete ${driver.firstName} ${driver.lastName}? This removes their account, login access, and wallet data. This action cannot be undone.`}
+        confirmLabel="Delete Permanently"
+        pendingLabel="Deleting..."
       />
 
       <Dialog

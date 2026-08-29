@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Clock, CreditCard, Settings2, Users } from "lucide-react";
+import { Clock, Moon, Settings2, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -25,15 +25,14 @@ const defaultValues: SiteSettingsFormSchema = {
   comingSoonMode: false,
   livePaymentMode: false,
   minBookingMinutes: 0,
-  stopFee: 0,
-  cardProcessingFee: 0,
   airportPickup: 0,
-  trainPickup: 0,
-  meetAndGreet: 0,
-  returnMeetAndGreet: 0,
   waitingTimePricePerMinute: 0,
   waitingTimePricePerHour: 0,
   driverCommissionPercent: 10,
+  nightPricingStartTime: "22:00",
+  nightPricingEndTime: "06:00",
+  nightPricingPercent: 0,
+  driverNotificationDelayMinutes: 10,
 };
 
 const SiteSettingsForm = () => {
@@ -113,7 +112,16 @@ const SiteSettingsForm = () => {
                 step={1}
                 placeholder="120"
               />
-              <div className="flex h-full flex-col justify-between gap-3 rounded-md border border-border p-3.5">
+              <FeeRow
+                variant="card"
+                name="driverNotificationDelayMinutes"
+                title="Driver email delay"
+                description="Minutes to wait after a booking is confirmed before emailing all drivers. If you assign a driver in that window, the blast email is skipped. Set 0 to email immediately."
+                label="Minutes"
+                step={1}
+                placeholder="10"
+              />
+              <div className="flex h-full flex-col justify-between gap-3 rounded-md border border-border p-3.5 sm:col-span-2">
                 <div className="min-w-0 space-y-1">
                   <p className="text-sm font-medium text-default-900">Driver waiting time</p>
                   <p className="text-xs leading-snug text-default-500">
@@ -146,8 +154,8 @@ const SiteSettingsForm = () => {
 
           <SettingsSection
             icon={Users}
-            title="Driver commission"
-            description="Percentage deducted from each trip fare before the driver is paid. Drivers only see their net earning."
+            title="Fees & commission"
+            description="Airport pickup charges and the commission deducted from each trip fare. Drivers only see their net earning."
           >
             <div className="grid grid-cols-1 gap-3 py-3 sm:grid-cols-2 lg:grid-cols-3">
               <FeeRow
@@ -160,59 +168,59 @@ const SiteSettingsForm = () => {
                 step={0.01}
                 placeholder="10"
               />
-            </div>
-          </SettingsSection>
-
-          <SettingsSection
-            icon={CreditCard}
-            title="Pricing & fees"
-            description={`Amounts in ${CURRENCY_SYMBOL}. Set to 0 to disable a charge.`}
-          >
-            <div className="grid grid-cols-1 gap-3 py-3 sm:grid-cols-2 lg:grid-cols-3">
-              <FeeRow
-                variant="card"
-                name="stopFee"
-                title="Stops fee"
-                description="Per additional stop on the journey."
-                label={`Amount (${CURRENCY_SYMBOL})`}
-              />
-              <FeeRow
-                variant="card"
-                name="cardProcessingFee"
-                title="Card processing fee"
-                description="Added to card payments at checkout."
-                label="Rate (%)"
-                max={100}
-                step={0.01}
-                placeholder="0"
-              />
               <FeeRow
                 variant="card"
                 name="airportPickup"
                 title="Airport pickup"
-                description="When pickup is at an airport."
+                description="When pickup is at an airport. Set to 0 to disable."
                 label={`Amount (${CURRENCY_SYMBOL})`}
               />
+            </div>
+          </SettingsSection>
+
+          <SettingsSection
+            icon={Moon}
+            title="Night pricing"
+            description="Extra fare percent applied when pickup time falls in the night window. Set percent to 0 to disable."
+          >
+            <div className="grid grid-cols-1 gap-3 py-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="flex h-full flex-col justify-between gap-3 rounded-md border border-border p-3.5">
+                <div className="min-w-0 space-y-1">
+                  <p className="text-sm font-medium text-default-900">Start time</p>
+                  <p className="text-xs leading-snug text-default-500">
+                    Night pricing begins at this time.
+                  </p>
+                </div>
+                <Input
+                  name="nightPricingStartTime"
+                  type="time"
+                  label="Start"
+                  inputClassName="h-9 text-sm"
+                />
+              </div>
+              <div className="flex h-full flex-col justify-between gap-3 rounded-md border border-border p-3.5">
+                <div className="min-w-0 space-y-1">
+                  <p className="text-sm font-medium text-default-900">End time</p>
+                  <p className="text-xs leading-snug text-default-500">
+                    Night pricing ends at this time (can cross midnight).
+                  </p>
+                </div>
+                <Input
+                  name="nightPricingEndTime"
+                  type="time"
+                  label="End"
+                  inputClassName="h-9 text-sm"
+                />
+              </div>
               <FeeRow
                 variant="card"
-                name="trainPickup"
-                title="Train pickup"
-                description="When pickup is at a train station."
-                label={`Amount (${CURRENCY_SYMBOL})`}
-              />
-              <FeeRow
-                variant="card"
-                name="meetAndGreet"
-                title="Meet & greet"
-                description="Meet and greet at airport pickup."
-                label={`Amount (${CURRENCY_SYMBOL})`}
-              />
-              <FeeRow
-                variant="card"
-                name="returnMeetAndGreet"
-                title="Return meet & greet"
-                description="Meet and greet on the return leg at airport."
-                label={`Amount (${CURRENCY_SYMBOL})`}
+                name="nightPricingPercent"
+                title="Night surcharge"
+                description="Percent added to the fare during the night window."
+                label="Rate (%)"
+                max={100}
+                step={0.01}
+                placeholder="0"
               />
             </div>
           </SettingsSection>

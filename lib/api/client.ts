@@ -144,15 +144,15 @@ const request = <T>(
 ): Promise<T | undefined> => {
     switch (method) {
         case "get":
-            return axiosInstance.get(url, config);
+            return axiosInstance.get(url, config) as Promise<T | undefined>;
         case "post":
-            return axiosInstance.post(url, data, config);
+            return axiosInstance.post(url, data, config) as Promise<T | undefined>;
         case "put":
-            return axiosInstance.put(url, data, config);
+            return axiosInstance.put(url, data, config) as Promise<T | undefined>;
         case "patch":
-            return axiosInstance.patch(url, data, config);
+            return axiosInstance.patch(url, data, config) as Promise<T | undefined>;
         case "delete":
-            return axiosInstance.delete(url, config);
+            return axiosInstance.delete(url, config) as Promise<T | undefined>;
     }
 };
 

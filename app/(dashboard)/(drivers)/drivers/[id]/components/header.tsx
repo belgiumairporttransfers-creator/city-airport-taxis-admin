@@ -53,7 +53,7 @@ const Header = () => {
     { title: "Overview", link: basePath },
     { title: "Documents", link: `${basePath}/documents` },
     { title: "Reviews", link: `${basePath}/reviews` },
-    { title: "Activity", link: `${basePath}/activity` },
+    { title: "Wallet", link: `${basePath}/wallet` },
   ];
 
   if (isLoading) {

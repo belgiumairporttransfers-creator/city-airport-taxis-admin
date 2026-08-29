@@ -17,6 +17,7 @@ export const paymentSchema = z.object({
   status: paymentStatusSchema,
   amount: z.number(),
   currency: z.string(),
+  paymentMethod: z.string().optional(),
   transactionId: z.string().optional(),
   providerPaymentId: z.string().optional(),
   cardLastDigits: z.string().optional(),

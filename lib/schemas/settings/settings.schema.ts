@@ -2,20 +2,23 @@ import { z } from "zod";
 
 export const paymentModeSchema = z.enum(["test", "live"]);
 
+const timeStringSchema = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Time must be in HH:mm format");
+
 export const settingsSchema = z.object({
   maintenanceMode: z.boolean(),
   comingSoonMode: z.boolean(),
   paymentMode: paymentModeSchema,
   minBookingMinutes: z.number().int().min(0),
-  stopFee: z.number().min(0),
-  cardProcessingFee: z.number().min(0).max(100),
   airportPickup: z.number().min(0),
-  trainPickup: z.number().min(0),
-  meetAndGreet: z.number().min(0),
-  returnMeetAndGreet: z.number().min(0),
   waitingTimePricePerMinute: z.number().min(0),
   waitingTimePricePerHour: z.number().min(0),
   driverCommissionPercent: z.number().min(0).max(100),
+  nightPricingStartTime: timeStringSchema,
+  nightPricingEndTime: timeStringSchema,
+  nightPricingPercent: z.number().min(0).max(100),
+  driverNotificationDelayMinutes: z.number().int().min(0),
 });
 
 export const settingsResponseSchema = z.object({
@@ -25,15 +28,14 @@ export const settingsResponseSchema = z.object({
   comingSoonMode: z.boolean(),
   paymentMode: paymentModeSchema,
   minBookingMinutes: z.number().int().min(0),
-  stopFee: z.number().min(0),
-  cardProcessingFee: z.number().min(0).max(100),
   airportPickup: z.number().min(0),
-  trainPickup: z.number().min(0),
-  meetAndGreet: z.number().min(0),
-  returnMeetAndGreet: z.number().min(0),
   waitingTimePricePerMinute: z.number().min(0),
   waitingTimePricePerHour: z.number().min(0),
   driverCommissionPercent: z.number().min(0).max(100),
+  nightPricingStartTime: timeStringSchema.optional(),
+  nightPricingEndTime: timeStringSchema.optional(),
+  nightPricingPercent: z.number().min(0).max(100).optional(),
+  driverNotificationDelayMinutes: z.number().int().min(0).optional(),
   updatedAt: z.string().optional(),
   createdAt: z.string().optional(),
 });
@@ -50,17 +52,7 @@ export const siteSettingsFormSchema = z.object({
     .number()
     .int("Minimum booking time must be a whole number of minutes")
     .min(0, "Minimum booking time cannot be negative"),
-  stopFee: z.coerce.number().min(0, "Stops fee cannot be negative"),
-  cardProcessingFee: z.coerce
-    .number()
-    .min(0, "Card processing fee cannot be negative")
-    .max(100, "Card processing fee cannot exceed 100%"),
   airportPickup: z.coerce.number().min(0, "Airport pickup price cannot be negative"),
-  trainPickup: z.coerce.number().min(0, "Train pickup price cannot be negative"),
-  meetAndGreet: z.coerce.number().min(0, "Meet and greet price cannot be negative"),
-  returnMeetAndGreet: z.coerce
-    .number()
-    .min(0, "Return meet and greet price cannot be negative"),
   waitingTimePricePerMinute: z.coerce
     .number()
     .min(0, "Driver waiting time price per minute cannot be negative"),
@@ -71,6 +63,16 @@ export const siteSettingsFormSchema = z.object({
     .number()
     .min(0, "Driver commission cannot be negative")
     .max(100, "Driver commission cannot exceed 100%"),
+  nightPricingStartTime: timeStringSchema,
+  nightPricingEndTime: timeStringSchema,
+  nightPricingPercent: z.coerce
+    .number()
+    .min(0, "Night pricing percent cannot be negative")
+    .max(100, "Night pricing percent cannot exceed 100%"),
+  driverNotificationDelayMinutes: z.coerce
+    .number()
+    .int("Driver notification delay must be a whole number of minutes")
+    .min(0, "Driver notification delay cannot be negative"),
 });
 
 export type SiteSettingsFormSchema = z.infer<typeof siteSettingsFormSchema>;
@@ -82,15 +84,14 @@ export const toSettingsPayload = (
   comingSoonMode: values.comingSoonMode,
   paymentMode: values.livePaymentMode ? "live" : "test",
   minBookingMinutes: values.minBookingMinutes,
-  stopFee: values.stopFee,
-  cardProcessingFee: values.cardProcessingFee,
   airportPickup: values.airportPickup,
-  trainPickup: values.trainPickup,
-  meetAndGreet: values.meetAndGreet,
-  returnMeetAndGreet: values.returnMeetAndGreet,
   waitingTimePricePerMinute: values.waitingTimePricePerMinute,
   waitingTimePricePerHour: values.waitingTimePricePerHour,
   driverCommissionPercent: values.driverCommissionPercent,
+  nightPricingStartTime: values.nightPricingStartTime,
+  nightPricingEndTime: values.nightPricingEndTime,
+  nightPricingPercent: values.nightPricingPercent,
+  driverNotificationDelayMinutes: values.driverNotificationDelayMinutes,
 });
 
 export const fromSettingsResponse = (settings: Settings): SiteSettingsFormSchema => ({
@@ -98,13 +99,12 @@ export const fromSettingsResponse = (settings: Settings): SiteSettingsFormSchema
   comingSoonMode: settings.comingSoonMode ?? false,
   livePaymentMode: settings.paymentMode === "live",
   minBookingMinutes: settings.minBookingMinutes ?? 120,
-  stopFee: settings.stopFee ?? 0,
-  cardProcessingFee: settings.cardProcessingFee ?? 0,
   airportPickup: settings.airportPickup ?? 0,
-  trainPickup: settings.trainPickup ?? 0,
-  meetAndGreet: settings.meetAndGreet ?? 0,
-  returnMeetAndGreet: settings.returnMeetAndGreet ?? 0,
   waitingTimePricePerMinute: settings.waitingTimePricePerMinute ?? 0,
   waitingTimePricePerHour: settings.waitingTimePricePerHour ?? 0,
   driverCommissionPercent: settings.driverCommissionPercent ?? 10,
+  nightPricingStartTime: settings.nightPricingStartTime ?? "22:00",
+  nightPricingEndTime: settings.nightPricingEndTime ?? "06:00",
+  nightPricingPercent: settings.nightPricingPercent ?? 0,
+  driverNotificationDelayMinutes: settings.driverNotificationDelayMinutes ?? 10,
 });

@@ -1,6 +1,7 @@
 import {
   Application,
   Calendar,
+  ClipBoard,
   DashBoard,
   DocsCheck,
   Envelope,
@@ -126,6 +127,16 @@ export const menus: MenuItem[] = [
         title: "Add Driver",
         href: "/drivers/add",
         icon: UserPlus,
+      },
+      {
+        title: "Requested Payouts",
+        href: "/drivers/payouts/requested",
+        icon: ClipBoard,
+      },
+      {
+        title: "Completed Payouts",
+        href: "/drivers/payouts/completed",
+        icon: ListFill,
       },
     ],
   },

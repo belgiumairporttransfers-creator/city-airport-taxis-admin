@@ -1,29 +1,31 @@
 import type { CalendarCategory } from "@/lib/interface";
 
-export const bookingStatusCategories: CalendarCategory[] = [
+export const bookingTypeCategories: CalendarCategory[] = [
   {
-    label: "Pending",
-    value: "pending",
-    className: "data-[state=checked]:bg-warning",
-  },
-  {
-    label: "Confirmed",
-    value: "confirmed",
+    label: "One way",
+    value: "one-way",
     className: "data-[state=checked]:bg-primary",
   },
   {
-    label: "Accepted",
-    value: "accepted",
-    className: "data-[state=checked]:bg-info",
-  },
-  {
-    label: "Complete",
-    value: "complete",
+    label: "Return",
+    value: "return-trip",
     className: "data-[state=checked]:bg-success",
   },
   {
-    label: "Cancelled",
-    value: "cancelled",
-    className: "data-[state=checked]:bg-destructive",
+    label: "Hourly",
+    value: "hourly",
+    className: "data-[state=checked]:bg-warning",
   },
 ];
+
+export const bookingTypeColorClass: Record<string, string> = {
+  "one-way": "primary",
+  "return-trip": "success",
+  hourly: "warning",
+};
+
+export const bookingTypeLabel: Record<string, string> = {
+  "one-way": "One way",
+  "return-trip": "Return",
+  hourly: "Hourly",
+};

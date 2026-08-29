@@ -2,12 +2,14 @@
 export interface CalendarEvent {
   id: string;
   title: string;
-  start: Date;
-  end: Date;
+  start: Date | string;
+  end: Date | string;
   allDay: boolean;
+  classNames?: string[];
   extendedProps: {
     calendar: string;
     bookingId: string;
+    tripType?: string;
   };
 }
 

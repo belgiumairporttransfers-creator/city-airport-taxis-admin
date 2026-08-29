@@ -1,3 +1,4 @@
+export * from "./assignment";
 export * from "./auth";
 export * from "./booking";
 export * from "./dashboard";
@@ -8,3 +9,4 @@ export * from "./payment";
 export * from "./settings";
 export * from "./vehicle";
 export * from "./trip";
+export * from "./wallet";

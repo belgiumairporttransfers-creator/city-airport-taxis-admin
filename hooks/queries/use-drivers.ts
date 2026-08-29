@@ -1,9 +1,11 @@
 import {
   approveDriverApplication,
   createDriverApplication,
+  deleteDriverApplication,
   getDriverApplication,
   getDriverApplicationStats,
   getDriverApplications,
+  reactivateDriverApplication,
   rejectDriverApplication,
   requestDriverChanges,
   startDriverReview,
@@ -144,6 +146,37 @@ export const useSuspendDriverApplication = (id: string) => {
     },
     onError: (error: ApiError) => {
       toast.error(error?.message || "Failed to suspend driver.");
+    },
+  });
+};
+
+export const useReactivateDriverApplication = (id: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => reactivateDriverApplication(id),
+    onSuccess: async () => {
+      toast.success("Driver reactivated");
+      await refreshDriverQueries(queryClient, id);
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "Failed to reactivate driver.");
+    },
+  });
+};
+
+export const useDeleteDriverApplication = (id: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => deleteDriverApplication(id),
+    onSuccess: async () => {
+      toast.success("Driver deleted permanently");
+      await refreshDriverList(queryClient);
+      queryClient.removeQueries({ queryKey: driverQueryKey(id) });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "Failed to delete driver.");
     },
   });
 };

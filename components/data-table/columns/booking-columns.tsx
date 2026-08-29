@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, MoreHorizontal, Trash2 } from "lucide-react";
+import { Eye, MoreHorizontal, Pencil, Trash2, UserPlus } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -39,6 +39,7 @@ const bookingStatusClasses: Record<string, string> = {
 
 interface GetBookingColumnsOptions {
   onDelete: (id: string) => void;
+  onAssign?: (booking: Booking) => void;
   isDeleting?: boolean;
 }
 
@@ -61,6 +62,7 @@ export function getBookingFilterColumns(): DataTableFilterColumn[] {
 
 export function getBookingColumns({
   onDelete,
+  onAssign,
   isDeleting = false,
 }: GetBookingColumnsOptions): ColumnDef<Booking>[] {
   return [
@@ -180,39 +182,62 @@ export function getBookingColumns({
     {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => (
-        <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                disabled={isDeleting}
-                aria-label="Open actions"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-36">
-              <DropdownMenuItem asChild>
-                <Link href={`/bookings/${row.original.id}`} className="flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  View
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="flex items-center gap-2 text-destructive focus:text-destructive"
-                disabled={isDeleting}
-                onClick={() => onDelete(row.original.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const canAssign =
+          row.original.status === "confirmed" && !row.original.driver?.driverId;
+
+        return (
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  disabled={isDeleting}
+                  aria-label="Open actions"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                <DropdownMenuItem asChild>
+                  <Link href={`/bookings/${row.original.id}`} className="flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    View
+                  </Link>
+                </DropdownMenuItem>
+                {canAssign && onAssign ? (
+                  <DropdownMenuItem
+                    className="flex items-center gap-2"
+                    onClick={() => onAssign(row.original)}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Assign
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuItem asChild>
+                  <Link
+                    href={`/bookings/${row.original.id}/edit`}
+                    className="flex items-center gap-2"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="flex items-center gap-2 text-destructive focus:text-destructive"
+                  disabled={isDeleting}
+                  onClick={() => onDelete(row.original.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
       enableSorting: false,
       enableHiding: false,
     },

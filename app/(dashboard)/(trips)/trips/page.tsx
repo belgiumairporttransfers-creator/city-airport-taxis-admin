@@ -10,18 +10,20 @@ import {
   getBookingColumns,
   getBookingFilterColumns,
 } from "@/components/data-table/columns/booking-columns";
+import AssignBookingModel from "@/components/models/assign-booking-model";
 import {
   useBookings,
   useBulkDeleteBookings,
   useDeleteBooking,
 } from "@/hooks/queries/use-bookings";
-import type { BookingStatus } from "@/lib/schemas";
+import type { Booking, BookingStatus } from "@/lib/schemas";
 
 const BookingsPage = () => {
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(10);
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<BookingStatus | "">("");
+  const [assignBooking, setAssignBooking] = React.useState<Booking | null>(null);
 
   const { data, isLoading, isFetching } = useBookings({
     page,
@@ -57,6 +59,7 @@ const BookingsPage = () => {
     () =>
       getBookingColumns({
         onDelete: removeBooking,
+        onAssign: setAssignBooking,
         isDeleting: isDeletingOne || isDeletingBulk,
       }),
     [removeBooking, isDeletingOne, isDeletingBulk]
@@ -125,6 +128,12 @@ const BookingsPage = () => {
           />
         </CardContent>
       </Card>
+
+      <AssignBookingModel
+        open={Boolean(assignBooking)}
+        booking={assignBooking}
+        onClose={() => setAssignBooking(null)}
+      />
     </>
   );
 };

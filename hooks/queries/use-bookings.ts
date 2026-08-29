@@ -3,8 +3,9 @@ import {
   deleteBooking,
   getBooking,
   getBookings,
+  updateBooking,
 } from "@/lib/api/booking";
-import type { GetBookingsParams } from "@/lib/schemas";
+import type { GetBookingsParams, UpdateBookingPayload } from "@/lib/schemas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
@@ -42,6 +43,22 @@ export const useBooking = (id: string) => {
     queryFn: () => getBooking(id),
     enabled: Boolean(id),
     staleTime: 1000 * 30,
+  });
+};
+
+export const useUpdateBooking = (id: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateBookingPayload) => updateBooking(id, payload),
+    onSuccess: async () => {
+      toast.success("Booking updated. Customer notified by email.");
+      await queryClient.invalidateQueries({ queryKey: BOOKINGS_QUERY_KEY });
+      await queryClient.invalidateQueries({ queryKey: bookingQueryKey(id) });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "Failed to update booking.");
+    },
   });
 };
 

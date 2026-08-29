@@ -557,8 +557,24 @@ html[dir="rtl"] .react-select .select__loading-indicator {
   @apply cursor-pointer;
 }
 
+.dash-tail-calendar .fc-daygrid-block-event {
+  @apply rounded-md;
+}
+
+.dash-tail-calendar .fc-h-event {
+  @apply border-0;
+}
+
+.dash-tail-calendar .fc-h-event .fc-event-main {
+  @apply w-full;
+}
+
 .dash-tail-calendar .fc-h-event .fc-event-main-frame {
-  @apply flex justify-center items-center text-center w-max mx-auto;
+  @apply flex w-full min-w-0 items-center justify-start gap-1 text-left;
+}
+
+.dash-tail-calendar .fc-daygrid-event .fc-event-title {
+  @apply truncate text-left;
 }
 
 .dash-tail-calendar .fc-event-time {
