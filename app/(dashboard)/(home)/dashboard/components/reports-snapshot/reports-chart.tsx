@@ -9,19 +9,43 @@ import {
   getXAxisConfig,
   getYAxisConfig,
 } from "@/lib/appex-chart-options";
+import { CURRENCY_SYMBOL } from "@/lib/utils";
 import type { ApexAxisChartSeries } from "apexcharts";
 
 interface ReportsChartProps {
   series: ApexAxisChartSeries;
   chartColor: string;
   height?: number;
+  valueFormat?: "currency" | "count";
 }
 
-const ReportsChart = ({ series, chartColor, height = 300 }: ReportsChartProps) => {
+const formatAxisValue = (value: number, valueFormat: "currency" | "count") => {
+  if (!Number.isFinite(value)) return "0";
+
+  if (valueFormat === "currency") {
+    const rounded = Math.round(value * 100) / 100;
+    return `${CURRENCY_SYMBOL}${rounded.toLocaleString("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
+  return Math.round(value).toLocaleString("en-US");
+};
+
+const ReportsChart = ({
+  series,
+  chartColor,
+  height = 300,
+  valueFormat = "count",
+}: ReportsChartProps) => {
   const { theme: config } = useThemeStore();
   const { theme: mode } = useTheme();
 
   const theme = themes.find((theme) => theme.name === config);
+  const labelColor = `hsl(${
+    theme?.cssVars[mode === "dark" ? "dark" : "light"].chartLabel
+  })`;
 
   const options: any = {
     chart: {
@@ -39,6 +63,9 @@ const ReportsChart = ({ series, chartColor, height = 300 }: ReportsChartProps) =
     colors: [chartColor],
     tooltip: {
       theme: mode === "dark" ? "dark" : "light",
+      y: {
+        formatter: (value: number) => formatAxisValue(value, valueFormat),
+      },
     },
     grid: getGridConfig(
       `hsl(${theme?.cssVars[mode === "dark" ? "dark" : "light"].chartGird})`
@@ -53,12 +80,10 @@ const ReportsChart = ({ series, chartColor, height = 300 }: ReportsChartProps) =
         stops: [50, 100, 0],
       },
     },
-    yaxis: getYAxisConfig(
-      `hsl(${theme?.cssVars[mode === "dark" ? "dark" : "light"].chartLabel})`
+    yaxis: getYAxisConfig(labelColor, (value) =>
+      formatAxisValue(value, valueFormat)
     ),
-    xaxis: getXAxisConfig(
-      `hsl(${theme?.cssVars[mode === "dark" ? "dark" : "light"].chartLabel})`
-    ),
+    xaxis: getXAxisConfig(labelColor),
     padding: {
       top: 0,
       right: 0,
@@ -74,7 +99,7 @@ const ReportsChart = ({ series, chartColor, height = 300 }: ReportsChartProps) =
       height={height}
       width={"100%"}
     />
-  )
-}
+  );
+};
 
 export default ReportsChart;

@@ -60,16 +60,19 @@ const ReportsSnapshot = () => {
       value: "revenue",
       series: series?.revenue ? [{ data: series.revenue }] : EMPTY_SERIES,
       color: primary,
+      valueFormat: "currency" as const,
     },
     {
       value: "users",
       series: series?.users ? [{ data: series.users }] : EMPTY_SERIES,
       color: warning,
+      valueFormat: "count" as const,
     },
     {
       value: "drivers",
       series: series?.drivers ? [{ data: series.drivers }] : EMPTY_SERIES,
       color: success,
+      valueFormat: "count" as const,
     },
     {
       value: "bookings",
@@ -77,6 +80,7 @@ const ReportsSnapshot = () => {
         ? [{ data: series.completedBookings }]
         : EMPTY_SERIES,
       color: info,
+      valueFormat: "count" as const,
     },
   ];
 
@@ -129,7 +133,11 @@ const ReportsSnapshot = () => {
           </TabsList>
           {tabsContentData.map((item, index) => (
             <TabsContent key={`report-tab-${index}`} value={item.value}>
-              <ReportsChart series={item.series} chartColor={item.color} />
+              <ReportsChart
+                series={item.series}
+                chartColor={item.color}
+                valueFormat={item.valueFormat}
+              />
             </TabsContent>
           ))}
         </Tabs>
