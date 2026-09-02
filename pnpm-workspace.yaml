@@ -1,0 +1,8 @@
+allowBuilds:
+  '@parcel/watcher': false
+  '@scarf/scarf': false
+  bcrypt: false
+  esbuild: false
+  maplibre-gl: false
+  sharp: false
+  unrs-resolver: false
