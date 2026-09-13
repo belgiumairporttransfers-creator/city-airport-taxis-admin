@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import type { DataTableFilterColumn } from "@/components/data-table/data-table-toolbar";
-import { formatDate, formatPrice, formatTime } from "@/lib/utils";
+import { PICKUP_DATE_PRESET_OPTIONS } from "@/lib/booking-pickup-date-presets";
+import { formatPrice } from "@/lib/utils";
 import type { Booking, BookingStatus } from "@/lib/schemas";
 
 const EUR_SYMBOL = "€";
@@ -56,6 +57,15 @@ export function getBookingFilterColumns(): DataTableFilterColumn[] {
         { value: "complete", label: "Complete" },
         { value: "cancelled", label: "Cancelled" },
       ],
+    },
+    {
+      column: "pickupDate",
+      title: "Pickup date",
+      multiple: false,
+      options: PICKUP_DATE_PRESET_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label,
+      })),
     },
   ];
 }
@@ -168,13 +178,31 @@ export function getBookingColumns({
       },
     },
     {
-      accessorKey: "createdAt",
+      id: "pickupDate",
+      accessorFn: (row) => row.route.pickupDate,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
+      enableColumnFilter: true,
+      filterFn: (row, _columnId, filterValue) => {
+        const values = filterValue as string[] | undefined;
+        if (!values?.length) return true;
+        return values.includes(row.original.route.pickupDate);
+      },
       cell: ({ row }) => {
-        const value = row.getValue("createdAt") as string;
+        const { pickupDate, pickupTime } = row.original.route;
+        const [year, month, day] = pickupDate.split("-").map(Number);
+        const hasValidDate = Boolean(year && month && day);
+        const dateLabel = hasValidDate
+          ? new Date(year, month - 1, day).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          : pickupDate;
+
         return (
           <span className="whitespace-nowrap text-default-600">
-            {formatDate(value)} {formatTime(value)}
+            {dateLabel}
+            {pickupTime ? ` ${pickupTime}` : ""}
           </span>
         );
       },

@@ -1,6 +1,7 @@
 import {
   approveDriverPayout,
   getAllDriverPayouts,
+  getDriverEarningsReport,
   getDriverWallet,
   getDriverWalletPayouts,
   getDriverWalletTransactions,
@@ -21,6 +22,8 @@ export const driverWalletPayoutsQueryKey = (
 ) => ["drivers", id, "wallet", "payouts", params] as const;
 export const allDriverPayoutsQueryKey = (params: GetWalletTransactionsParams) =>
   ["drivers", "payouts", params] as const;
+export const driverEarningsReportQueryKey = (driverId?: string) =>
+  ["drivers", "earnings-report", driverId ?? "all"] as const;
 
 type ApiError = { message?: string };
 
@@ -66,6 +69,15 @@ export const useAllDriverPayouts = (params: GetWalletTransactionsParams) => {
     queryFn: () => getAllDriverPayouts(params),
     staleTime: 0,
     refetchOnWindowFocus: false,
+  });
+};
+
+export const useDriverEarningsReport = (driverId?: string) => {
+  return useQuery({
+    queryKey: driverEarningsReportQueryKey(driverId),
+    queryFn: () => getDriverEarningsReport(driverId),
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 };
 

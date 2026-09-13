@@ -52,7 +52,8 @@ export const useDrivers = (params: GetDriverApplicationsParams) => {
     queryKey: [...DRIVERS_QUERY_KEY, params],
     queryFn: () => getDriverApplications(params),
     staleTime: 0,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchInterval: 5_000,
   });
 };
 
@@ -71,7 +72,8 @@ export const useDriver = (id: string) => {
     queryFn: () => getDriverApplication(id),
     enabled: Boolean(id),
     staleTime: 0,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchInterval: 5_000,
   });
 };
 

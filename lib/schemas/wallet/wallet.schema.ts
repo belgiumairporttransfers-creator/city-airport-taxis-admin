@@ -80,9 +80,38 @@ export const getWalletTransactionsParamsSchema = z.object({
   sort: z.string().optional(),
 });
 
+export const driverEarningsReportItemSchema = z.object({
+  bookingId: z.string(),
+  bookingNumber: z.string(),
+  driverId: z.string(),
+  total: z.number(),
+  commissionPercent: z.number(),
+  driverEarning: z.number(),
+  net: z.number(),
+  paymentStatus: z.string(),
+  bookingStatus: z.string(),
+  pickupDate: z.string(),
+});
+
+export const driverEarningsReportSummarySchema = z.object({
+  count: z.number(),
+  commissionPercent: z.number(),
+  totalRevenue: z.number(),
+  totalDriverEarnings: z.number(),
+  totalCommission: z.number(),
+});
+
+export const driverEarningsReportSchema = z.object({
+  items: z.array(driverEarningsReportItemSchema),
+  summary: driverEarningsReportSummarySchema,
+});
+
 export type WalletTransaction = z.infer<typeof walletTransactionSchema>;
 export type DriverWalletSummary = z.infer<typeof driverWalletSummarySchema>;
 export type WalletTransactionsResponse = z.infer<typeof walletTransactionsResponseSchema>;
 export type AdminPayout = z.infer<typeof adminPayoutSchema>;
 export type AdminPayoutsResponse = z.infer<typeof adminPayoutsResponseSchema>;
 export type GetWalletTransactionsParams = z.infer<typeof getWalletTransactionsParamsSchema>;
+export type DriverEarningsReportItem = z.infer<typeof driverEarningsReportItemSchema>;
+export type DriverEarningsReportSummary = z.infer<typeof driverEarningsReportSummarySchema>;
+export type DriverEarningsReport = z.infer<typeof driverEarningsReportSchema>;

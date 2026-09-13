@@ -3,13 +3,17 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Home, Pencil, Trash2, UserPlus } from "lucide-react";
+import { CheckCircle2, Home, Pencil, Trash2, UserPlus } from "lucide-react";
 import LayoutLoader from "@/components/layout-loader";
 import AssignBookingModel from "@/components/models/assign-booking-model";
 import { Breadcrumbs, BreadcrumbItem } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useBooking, useDeleteBooking } from "@/hooks/queries/use-bookings";
+import {
+  useBooking,
+  useCompleteBooking,
+  useDeleteBooking,
+} from "@/hooks/queries/use-bookings";
 import { formatDate, formatDistance, formatPrice, formatTime } from "@/lib/utils";
 
 const EUR_SYMBOL = "€";
@@ -19,6 +23,7 @@ const BookingDetailPage = () => {
   const router = useRouter();
   const { data, isLoading, isError, error } = useBooking(params.id);
   const { mutate: removeBooking, isPending: isDeleting } = useDeleteBooking();
+  const { mutate: markComplete, isPending: isCompleting } = useCompleteBooking();
   const [assignOpen, setAssignOpen] = useState(false);
 
   if (isLoading) {
@@ -49,7 +54,13 @@ const BookingDetailPage = () => {
     });
   };
 
+  const handleComplete = () => {
+    if (!window.confirm("Mark this booking as complete?")) return;
+    markComplete(data.id);
+  };
+
   const canAssign = data.status === "confirmed" && !data.driver?.driverId;
+  const canComplete = data.status === "accepted";
 
   return (
     <>
@@ -75,6 +86,12 @@ const BookingDetailPage = () => {
             <Button type="button" onClick={() => setAssignOpen(true)}>
               <UserPlus className="h-4 w-4" />
               Assign driver
+            </Button>
+          ) : null}
+          {canComplete ? (
+            <Button type="button" disabled={isCompleting} onClick={handleComplete}>
+              <CheckCircle2 className="h-4 w-4" />
+              Mark complete
             </Button>
           ) : null}
           <Button type="button" variant="outline" asChild>

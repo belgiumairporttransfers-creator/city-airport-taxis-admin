@@ -11,7 +11,8 @@ export const useTrips = (params: GetTripsParams) => {
     queryKey: [...TRIPS_QUERY_KEY, params],
     queryFn: () => getTrips(params),
     staleTime: 0,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchInterval: 5_000,
   });
 };
 
@@ -21,6 +22,7 @@ export const useTrip = (bookingNumber: string) => {
     queryFn: () => getTrip(bookingNumber),
     enabled: Boolean(bookingNumber),
     staleTime: 0,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchInterval: 5_000,
   });
 };

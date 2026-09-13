@@ -21,13 +21,12 @@ import {
   resolvePickupDatePreset,
   type PickupDatePreset,
 } from "@/lib/booking-pickup-date-presets";
-import type { Booking, BookingStatus } from "@/lib/schemas";
+import type { Booking } from "@/lib/schemas";
 
-const BookingsPage = () => {
+const CompletedBookingsPage = () => {
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(10);
   const [search, setSearch] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState<BookingStatus | "">("");
   const [pickupDateFilter, setPickupDateFilter] = React.useState<PickupDatePreset | "">(
     ""
   );
@@ -42,7 +41,7 @@ const BookingsPage = () => {
     page,
     limit,
     search,
-    status: statusFilter || undefined,
+    status: "complete",
     pickupDateFrom: pickupDateRange?.pickupDateFrom,
     pickupDateTo: pickupDateRange?.pickupDateTo,
   });
@@ -53,23 +52,18 @@ const BookingsPage = () => {
 
   const columnFilters = React.useMemo<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
-    if (statusFilter) filters.push({ id: "status", value: [statusFilter] });
     if (pickupDateFilter) filters.push({ id: "pickupDate", value: [pickupDateFilter] });
     return filters;
-  }, [statusFilter, pickupDateFilter]);
+  }, [pickupDateFilter]);
 
   const handleColumnFiltersChange = React.useCallback<OnChangeFn<ColumnFiltersState>>(
     (updater) => {
       const nextFilters =
         typeof updater === "function" ? updater(columnFilters) : updater;
-      const statusValues = nextFilters.find((filter) => filter.id === "status")?.value as
-        | string[]
-        | undefined;
       const pickupDateValues = nextFilters.find((filter) => filter.id === "pickupDate")
         ?.value as string[] | undefined;
       const nextPickupDate = pickupDateValues?.[0];
 
-      setStatusFilter((statusValues?.[0] as BookingStatus | undefined) ?? "");
       setPickupDateFilter(
         nextPickupDate && isPickupDatePreset(nextPickupDate) ? nextPickupDate : ""
       );
@@ -78,7 +72,10 @@ const BookingsPage = () => {
     [columnFilters]
   );
 
-  const filterColumns = React.useMemo(() => getBookingFilterColumns(), []);
+  const filterColumns = React.useMemo(
+    () => getBookingFilterColumns().filter((column) => column.column !== "status"),
+    []
+  );
   const columns = React.useMemo(
     () =>
       getBookingColumns({
@@ -109,15 +106,17 @@ const BookingsPage = () => {
           <Home className="h-4 w-4" />
         </BreadcrumbItem>
         <BreadcrumbItem>Operations</BreadcrumbItem>
-        <BreadcrumbItem>Bookings</BreadcrumbItem>
+        <BreadcrumbItem>Completed Bookings</BreadcrumbItem>
       </Breadcrumbs>
 
       <Card className="mt-6 overflow-hidden">
         <CardHeader className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-lg font-semibold text-default-900">Bookings</CardTitle>
+            <CardTitle className="text-lg font-semibold text-default-900">
+              Completed Bookings
+            </CardTitle>
             <p className="mt-0.5 text-xs text-default-500">
-              Manage customer bookings, payments, and trip requests.
+              View bookings that have been marked complete.
             </p>
           </div>
         </CardHeader>
@@ -162,4 +161,4 @@ const BookingsPage = () => {
   );
 };
 
-export default BookingsPage;
+export default CompletedBookingsPage;

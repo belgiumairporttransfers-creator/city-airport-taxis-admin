@@ -132,6 +132,18 @@ export const getBookingsParamsSchema = z.object({
   search: z.string().optional(),
   status: bookingStatusSchema.optional(),
   paymentStatus: bookingPaymentStatusSchema.optional(),
+  pickupDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Pickup date must be YYYY-MM-DD")
+    .optional(),
+  pickupDateFrom: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Pickup date from must be YYYY-MM-DD")
+    .optional(),
+  pickupDateTo: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Pickup date to must be YYYY-MM-DD")
+    .optional(),
   sort: z.string().optional(),
 });
 

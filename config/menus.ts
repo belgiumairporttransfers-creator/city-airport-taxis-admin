@@ -138,6 +138,11 @@ export const menus: MenuItem[] = [
         href: "/drivers/payouts/completed",
         icon: ListFill,
       },
+      {
+        title: "Earnings Report",
+        href: "/drivers/earnings",
+        icon: Graph,
+      },
     ],
   },
   {
@@ -148,6 +153,11 @@ export const menus: MenuItem[] = [
         title: "Bookings",
         href: "/trips",
         icon: Flag,
+      },
+      {
+        title: "Completed Bookings",
+        href: "/trips/completed",
+        icon: DocsCheck,
       },
       {
         title: "Payment History",

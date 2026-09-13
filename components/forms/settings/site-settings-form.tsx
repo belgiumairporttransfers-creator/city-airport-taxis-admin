@@ -162,7 +162,7 @@ const SiteSettingsForm = () => {
                 variant="card"
                 name="driverCommissionPercent"
                 title="Commission deducted"
-                description="Example: 10% on a €50 trip means the driver earns €45."
+                description="Applied to every trip fare. Example: 10% on a €50 trip means the driver earns €45."
                 label="Rate (%)"
                 max={100}
                 step={0.01}

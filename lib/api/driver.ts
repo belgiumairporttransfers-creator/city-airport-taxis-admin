@@ -5,6 +5,7 @@ import type {
   DriverApplication,
   DriverApplicationStats,
   DriverApplicationsResponse,
+  DriverEarningsReport,
   DriverWalletSummary,
   GetDriverApplicationsParams,
   GetWalletTransactionsParams,
@@ -50,6 +51,12 @@ export const getDriverWalletPayouts = async (
 export const getAllDriverPayouts = async (params?: GetWalletTransactionsParams) => {
   return api.get<AdminPayoutsResponse>(`${API_ROUTES.DRIVERS}/payouts`, {
     params,
+  });
+};
+
+export const getDriverEarningsReport = async (driverId?: string) => {
+  return api.get<DriverEarningsReport>(`${API_ROUTES.DRIVERS}/earnings-report`, {
+    params: driverId ? { driverId } : undefined,
   });
 };
 

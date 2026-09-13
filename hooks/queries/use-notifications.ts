@@ -149,6 +149,15 @@ export const useNotificationSocket = () => {
       onNew: (notification) => {
         void refreshNotificationQueries(queryClient);
 
+        if (
+          notification.type.startsWith("trip.") ||
+          notification.type.startsWith("assignment.")
+        ) {
+          void queryClient.invalidateQueries({ queryKey: ["trips"] });
+          void queryClient.invalidateQueries({ queryKey: ["bookings"] });
+          void queryClient.invalidateQueries({ queryKey: ["drivers"] });
+        }
+
         if (notification.type === "booking.created") {
           toast.success(notification.message, {
             id: `notification-${notification.id}`,

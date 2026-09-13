@@ -19,6 +19,10 @@ export const updateBooking = async (id: string, payload: UpdateBookingPayload) =
   return api.patch<BookingDetail>(`${API_ROUTES.BOOKINGS}/${id}`, payload);
 };
 
+export const completeBooking = async (id: string) => {
+  return api.post<BookingDetail>(`${API_ROUTES.BOOKINGS}/${id}/complete`);
+};
+
 export const deleteBooking = async (id: string) => {
   return api.delete(`${API_ROUTES.BOOKINGS}/${id}`);
 };

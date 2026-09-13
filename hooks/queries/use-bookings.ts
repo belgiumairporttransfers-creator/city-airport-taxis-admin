@@ -1,5 +1,6 @@
 import {
   bulkDeleteBookings,
+  completeBooking,
   deleteBooking,
   getBooking,
   getBookings,
@@ -19,6 +20,7 @@ export const useBookings = (params: GetBookingsParams) => {
     queryFn: () => getBookings(params),
     staleTime: 1000 * 30,
     refetchOnWindowFocus: true,
+    refetchInterval: 10_000,
   });
 };
 
@@ -43,6 +45,8 @@ export const useBooking = (id: string) => {
     queryFn: () => getBooking(id),
     enabled: Boolean(id),
     staleTime: 1000 * 30,
+    refetchOnWindowFocus: true,
+    refetchInterval: 10_000,
   });
 };
 
@@ -58,6 +62,21 @@ export const useUpdateBooking = (id: string) => {
     },
     onError: (error: ApiError) => {
       toast.error(error?.message || "Failed to update booking.");
+    },
+  });
+};
+
+export const useCompleteBooking = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: completeBooking,
+    onSuccess: async () => {
+      toast.success("Booking marked as complete");
+      await queryClient.invalidateQueries({ queryKey: BOOKINGS_QUERY_KEY });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "Failed to mark booking as complete.");
     },
   });
 };
