@@ -179,6 +179,7 @@ const BookingsListPage = ({ viewKey }: BookingsListPageProps) => {
             filterColumns={filterColumns}
             columnFilters={columnFilters}
             onColumnFiltersChange={handleColumnFiltersChange}
+            initialColumnVisibility={{ pickupDate: false }}
             manualFiltering
             searchKey="bookingNumber"
             searchPlaceholder="Search by booking #, customer, or address"

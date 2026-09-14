@@ -165,9 +165,14 @@ export const menus: MenuItem[] = [
         icon: DocsCheck,
       },
       {
+        title: "Assigned Bookings",
+        href: "/trips/assign",
+        icon: UserPlus,
+      },
+      {
         title: "Accepted Bookings",
         href: "/trips/accepted",
-        icon: UserPlus,
+        icon: Users,
       },
       {
         title: "Arrived Bookings",

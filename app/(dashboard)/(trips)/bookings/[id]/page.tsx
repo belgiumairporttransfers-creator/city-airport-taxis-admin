@@ -203,6 +203,31 @@ const BookingDetailPage = () => {
               </div>
             </div>
 
+            {data.route.airportPickup ||
+            data.flight?.flightNumber ||
+            data.flight?.terminal ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs text-default-500">Airport pickup</p>
+                  <p className="font-medium text-default-900">
+                    {data.route.airportPickup || data.flight?.required ? "Yes" : "No"}
+                  </p>
+                </div>
+                {data.flight?.flightNumber ? (
+                  <div>
+                    <p className="text-xs text-default-500">Flight number</p>
+                    <p className="font-medium text-default-900">{data.flight.flightNumber}</p>
+                  </div>
+                ) : null}
+                {data.flight?.terminal ? (
+                  <div>
+                    <p className="text-xs text-default-500">Terminal</p>
+                    <p className="font-medium text-default-900">{data.flight.terminal}</p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
             {data.notes ? (
               <div>
                 <p className="text-xs text-default-500">Customer notes</p>
@@ -268,6 +293,34 @@ const BookingDetailPage = () => {
               </p>
               <p className="text-default-600">{data.customer.email}</p>
               <p className="text-default-600">{data.customer.phone}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Driver</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              {data.driver?.driverId ? (
+                <>
+                  <p className="font-medium text-default-900">
+                    {data.driver.name ||
+                      [data.driver.firstName, data.driver.lastName]
+                        .filter(Boolean)
+                        .join(" ")
+                        .trim() ||
+                      "Assigned driver"}
+                  </p>
+                  {data.driver.assignedAt ? (
+                    <p className="text-default-600">
+                      Assigned: {formatDate(data.driver.assignedAt)}{" "}
+                      {formatTime(data.driver.assignedAt)}
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <p className="text-default-500">No driver assigned</p>
+              )}
             </CardContent>
           </Card>
 

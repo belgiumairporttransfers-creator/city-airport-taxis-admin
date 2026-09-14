@@ -4,6 +4,7 @@ export type BookingListViewKey =
   | "all"
   | "pending"
   | "confirmed"
+  | "assign"
   | "accepted"
   | "arrived"
   | "onboard"
@@ -42,6 +43,14 @@ export const BOOKING_LIST_VIEWS: Record<BookingListViewKey, BookingListView> = {
     description: "Confirmed bookings ready to assign a driver.",
     href: "/trips/confirmed",
     status: "confirmed",
+    hideStatusFilter: true,
+  },
+  assign: {
+    key: "assign",
+    title: "Assigned Bookings",
+    description: "All bookings currently assigned to a driver.",
+    href: "/trips/assign",
+    status: "accepted",
     hideStatusFilter: true,
   },
   accepted: {

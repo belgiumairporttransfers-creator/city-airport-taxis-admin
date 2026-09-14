@@ -28,6 +28,11 @@ const paymentMethodLabels: Record<string, string> = {
   pay_onboard: "Pay onboard",
 };
 
+const paymentMethodClasses: Record<string, string> = {
+  mollie: "bg-primary/10 text-primary border border-transparent",
+  pay_onboard: "bg-warning/10 text-warning border border-transparent",
+};
+
 interface GetBookingColumnsOptions {
   onDelete: (id: string) => void;
   onAssign?: (booking: Booking) => void;
@@ -120,6 +125,22 @@ export function getBookingColumns({
       ),
     },
     {
+      id: "driver",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Driver" />,
+      cell: ({ row }) => {
+        const driver = row.original.driver;
+        const name =
+          driver?.name ||
+          [driver?.firstName, driver?.lastName].filter(Boolean).join(" ").trim();
+
+        return (
+          <span className="font-medium text-default-900">
+            {name || "—"}
+          </span>
+        );
+      },
+    },
+    {
       id: "pickup",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Pickup" />,
       cell: ({ row }) => (
@@ -162,7 +183,12 @@ export function getBookingColumns({
       cell: ({ row }) => {
         const method = row.original.payment.paymentMethod;
         return (
-          <span className="text-default-700">
+          <span
+            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              paymentMethodClasses[method] ??
+              "bg-default-100 text-default-700 border border-transparent"
+            }`}
+          >
             {paymentMethodLabels[method] ?? method}
           </span>
         );
@@ -197,36 +223,7 @@ export function getBookingColumns({
         );
       },
     },
-    {
-      id: "pickupDate",
-      accessorFn: (row) => row.route.pickupDate,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
-      enableColumnFilter: true,
-      filterFn: (row, _columnId, filterValue) => {
-        const values = filterValue as string[] | undefined;
-        if (!values?.length) return true;
-        return values.includes(row.original.route.pickupDate);
-      },
-      cell: ({ row }) => {
-        const { pickupDate, pickupTime } = row.original.route;
-        const [year, month, day] = pickupDate.split("-").map(Number);
-        const hasValidDate = Boolean(year && month && day);
-        const dateLabel = hasValidDate
-          ? new Date(year, month - 1, day).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
-          : pickupDate;
 
-        return (
-          <span className="whitespace-nowrap text-default-600">
-            {dateLabel}
-            {pickupTime ? ` ${pickupTime}` : ""}
-          </span>
-        );
-      },
-    },
     {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,

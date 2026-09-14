@@ -107,6 +107,9 @@ export const bookingSchema = z.object({
   payment: bookingPaymentSchema,
   driver: z.object({
     driverId: z.string().optional(),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    name: z.string().optional(),
     assignedAt: z.string().optional(),
     acceptedAt: z.string().optional(),
   }),
