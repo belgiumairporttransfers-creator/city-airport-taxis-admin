@@ -17,7 +17,7 @@ import { formatDate, formatPrice, formatTime } from "@/lib/utils";
 import type { Payment, PaymentStatus } from "@/lib/schemas";
 
 const paymentStatusLabels: Record<string, string> = {
-  paid: "Completed",
+  paid: "Paid",
   pending: "Pending",
   failed: "Failed",
   cancelled: "Cancelled",
@@ -36,6 +36,32 @@ const paymentStatusClasses: Record<string, string> = {
   partially_refunded: "bg-warning/10 text-warning",
 };
 
+const isPayOnboardMethod = (payment: Payment) => {
+  const method = (payment.paymentMethod || payment.method || "").toLowerCase();
+  return method === "pay_onboard" || method.includes("pay onboard") || method.includes("cash");
+};
+
+const getPaymentStatusDisplay = (payment: Payment) => {
+  if (isPayOnboardMethod(payment)) {
+    return {
+      label: "Cash",
+      className: "bg-primary/10 text-primary",
+    };
+  }
+
+  if (payment.status === "paid") {
+    return {
+      label: "Paid",
+      className: paymentStatusClasses.paid,
+    };
+  }
+
+  return {
+    label: paymentStatusLabels[payment.status] ?? payment.status.replaceAll("_", " "),
+    className: paymentStatusClasses[payment.status] ?? "bg-default-100 text-default-600",
+  };
+};
+
 interface GetPaymentColumnsOptions {
   onDelete: (id: string) => void;
   isDeleting?: boolean;
@@ -48,7 +74,7 @@ export function getPaymentFilterColumns(): DataTableFilterColumn[] {
       title: "Status",
       multiple: false,
       options: [
-        { value: "paid", label: "Completed" },
+        { value: "paid", label: "Paid" },
         { value: "pending", label: "Pending" },
         { value: "failed", label: "Failed" },
       ],
@@ -139,14 +165,12 @@ export function getPaymentColumns({
         return values.includes(row.getValue(columnId) as string);
       },
       cell: ({ row }) => {
-        const status = row.original.status;
+        const display = getPaymentStatusDisplay(row.original);
         return (
           <span
-            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              paymentStatusClasses[status] ?? "bg-default-100 text-default-600"
-            }`}
+            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${display.className}`}
           >
-            {paymentStatusLabels[status] ?? status.replaceAll("_", " ")}
+            {display.label}
           </span>
         );
       },
