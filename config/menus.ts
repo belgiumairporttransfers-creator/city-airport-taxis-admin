@@ -150,14 +150,49 @@ export const menus: MenuItem[] = [
     icon: Map,
     child: [
       {
-        title: "Bookings",
+        title: "All Bookings",
         href: "/trips",
         icon: Flag,
+      },
+      {
+        title: "Pending Bookings",
+        href: "/trips/pending",
+        icon: ClipBoard,
+      },
+      {
+        title: "Confirmed Bookings",
+        href: "/trips/confirmed",
+        icon: DocsCheck,
+      },
+      {
+        title: "Accepted Bookings",
+        href: "/trips/accepted",
+        icon: UserPlus,
+      },
+      {
+        title: "Arrived Bookings",
+        href: "/trips/arrived",
+        icon: Map,
+      },
+      {
+        title: "Passenger Onboard",
+        href: "/trips/onboard",
+        icon: Users,
+      },
+      {
+        title: "Started Trips",
+        href: "/trips/started",
+        icon: Graph,
       },
       {
         title: "Completed Bookings",
         href: "/trips/completed",
         icon: DocsCheck,
+      },
+      {
+        title: "Cancelled Bookings",
+        href: "/trips/cancelled",
+        icon: ListFill,
       },
       {
         title: "Payment History",

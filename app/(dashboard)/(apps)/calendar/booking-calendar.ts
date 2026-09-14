@@ -1,5 +1,6 @@
 import type { CalendarEvent } from "@/lib/interface";
 import type { Booking } from "@/lib/schemas";
+import { getBookingDisplayStatus } from "@/lib/booking-status-display";
 import { bookingTypeColorClass, bookingTypeLabel } from "./data";
 
 const DEFAULT_DURATION_MINUTES = 60;
@@ -15,9 +16,42 @@ const normalizeTripType = (category: string): string => {
   return "one-way";
 };
 
+/** Normalize HH:mm or HH:mm:ss into a parseable local datetime. */
 const parseDateTime = (date: string, time?: string): Date | null => {
-  const normalizedTime = time?.trim() ? time.trim() : "00:00";
-  const value = new Date(`${date}T${normalizedTime}:00`);
+  const dateOnly = toDateOnly(date);
+  if (!dateOnly) {
+    return null;
+  }
+
+  const rawTime = time?.trim() || "00:00";
+  const match = rawTime.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (!match) {
+    return null;
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const seconds = Number(match[3] ?? "0");
+
+  if (
+    !Number.isFinite(hours) ||
+    !Number.isFinite(minutes) ||
+    hours > 23 ||
+    minutes > 59 ||
+    seconds > 59
+  ) {
+    return null;
+  }
+
+  const value = new Date(
+    Number(dateOnly.slice(0, 4)),
+    Number(dateOnly.slice(5, 7)) - 1,
+    Number(dateOnly.slice(8, 10)),
+    hours,
+    minutes,
+    seconds
+  );
+
   return Number.isNaN(value.getTime()) ? null : value;
 };
 
@@ -43,9 +77,13 @@ const exclusiveEndDate = (dateOnly: string): string | null => {
 };
 
 const formatEventTime = (time: string): string => {
-  const [hoursRaw, minutesRaw] = time.split(":");
-  const hours = Number(hoursRaw);
-  const minutes = Number(minutesRaw);
+  const match = time.trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) {
+    return time;
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
   if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
     return time;
   }
@@ -55,8 +93,15 @@ const formatEventTime = (time: string): string => {
   return `${hour12}:${String(minutes).padStart(2, "0")}${period}`;
 };
 
+export const toYmd = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export const bookingToCalendarEvent = (booking: Booking): CalendarEvent | null => {
-  const { pickupDate, pickupTime, returnDate, returnTime, durationMinutes } = booking.route;
+  const { pickupDate, pickupTime, returnDate, durationMinutes } = booking.route;
 
   if (!pickupDate || !pickupTime) {
     return null;
@@ -65,6 +110,7 @@ export const bookingToCalendarEvent = (booking: Booking): CalendarEvent | null =
   const tripType = normalizeTripType(booking.category);
   const typeLabel = bookingTypeLabel[tripType] ?? "One way";
   const colorClass = bookingTypeColorClass[tripType] ?? "primary";
+  const displayStatus = getBookingDisplayStatus(booking);
   const pickupDateOnly = toDateOnly(pickupDate);
   const returnDateOnly = returnDate ? toDateOnly(returnDate) : null;
 
@@ -73,13 +119,13 @@ export const bookingToCalendarEvent = (booking: Booking): CalendarEvent | null =
     if (spanEnd && returnDateOnly >= pickupDateOnly) {
       return {
         id: booking.id,
-        title: `${formatEventTime(pickupTime)} ${typeLabel} · ${booking.bookingNumber}`,
+        title: `${formatEventTime(pickupTime)} ${typeLabel} · ${booking.bookingNumber} · ${displayStatus.label}`,
         start: pickupDateOnly,
         end: spanEnd,
         allDay: true,
         classNames: [colorClass],
         extendedProps: {
-          calendar: booking.status,
+          calendar: displayStatus.key,
           bookingId: booking.id,
           tripType,
         },
@@ -97,13 +143,13 @@ export const bookingToCalendarEvent = (booking: Booking): CalendarEvent | null =
 
   return {
     id: booking.id,
-    title: `${formatEventTime(pickupTime)} ${typeLabel} · ${booking.bookingNumber}`,
+    title: `${formatEventTime(pickupTime)} ${typeLabel} · ${booking.bookingNumber} · ${displayStatus.label}`,
     start,
     end,
     allDay: false,
     classNames: [colorClass],
     extendedProps: {
-      calendar: booking.status,
+      calendar: displayStatus.key,
       bookingId: booking.id,
       tripType,
     },

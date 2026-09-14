@@ -24,15 +24,21 @@ export const useBookings = (params: GetBookingsParams) => {
   });
 };
 
-export const useCalendarBookings = () => {
+export const useCalendarBookings = (range?: {
+  pickupDateFrom?: string;
+  pickupDateTo?: string;
+}) => {
   return useQuery({
-    queryKey: [...BOOKINGS_QUERY_KEY, "calendar"],
+    queryKey: [...BOOKINGS_QUERY_KEY, "calendar", range ?? {}],
     queryFn: () =>
       getBookings({
         page: 1,
         limit: 100,
         sort: "route.pickupDate",
+        pickupDateFrom: range?.pickupDateFrom,
+        pickupDateTo: range?.pickupDateTo,
       }),
+    enabled: Boolean(range?.pickupDateFrom && range?.pickupDateTo),
     staleTime: 1000 * 30,
     refetchOnWindowFocus: true,
     refetchInterval: 30_000,

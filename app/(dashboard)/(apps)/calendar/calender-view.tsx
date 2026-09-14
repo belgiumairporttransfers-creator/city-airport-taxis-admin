@@ -7,7 +7,12 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
-import type { DayCellContentArg, EventClickArg, EventContentArg } from "@fullcalendar/core";
+import type {
+  DatesSetArg,
+  DayCellContentArg,
+  EventClickArg,
+  EventContentArg,
+} from "@fullcalendar/core";
 import type { DateClickArg } from "@fullcalendar/interaction";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
@@ -15,13 +20,25 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import LayoutLoader from "@/components/layout-loader";
 import { bookingTypeCategories, bookingTypeColorClass } from "./data";
-import { bookingsToCalendarEvents } from "./booking-calendar";
+import { bookingsToCalendarEvents, toYmd } from "./booking-calendar";
 import { useCalendarBookings } from "@/hooks/queries/use-bookings";
 
 const isSameDay = (left: Date, right: Date) =>
   left.getFullYear() === right.getFullYear() &&
   left.getMonth() === right.getMonth() &&
   left.getDate() === right.getDate();
+
+const getInitialRange = () => {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), 1);
+  from.setDate(from.getDate() - 7);
+  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  to.setDate(to.getDate() + 7);
+  return {
+    pickupDateFrom: toYmd(from),
+    pickupDateTo: toYmd(to),
+  };
+};
 
 const CalendarView = () => {
   const router = useRouter();
@@ -31,8 +48,9 @@ const CalendarView = () => {
     bookingTypeCategories.map((category) => category.value)
   );
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [visibleRange, setVisibleRange] = useState(getInitialRange);
 
-  const { data, isLoading, isFetching } = useCalendarBookings();
+  const { data, isLoading, isFetching } = useCalendarBookings(visibleRange);
 
   useEffect(() => {
     const api = calendarRef.current?.getApi();
@@ -55,6 +73,28 @@ const CalendarView = () => {
       ),
     [events, selectedType]
   );
+
+  const handleDatesSet = (arg: DatesSetArg) => {
+    const from = new Date(arg.start);
+    from.setDate(from.getDate() - 1);
+    const to = new Date(arg.end);
+    to.setDate(to.getDate() + 1);
+
+    const nextRange = {
+      pickupDateFrom: toYmd(from),
+      pickupDateTo: toYmd(to),
+    };
+
+    setVisibleRange((current) => {
+      if (
+        current.pickupDateFrom === nextRange.pickupDateFrom &&
+        current.pickupDateTo === nextRange.pickupDateTo
+      ) {
+        return current;
+      }
+      return nextRange;
+    });
+  };
 
   const handleEventClick = (arg: EventClickArg) => {
     arg.jsEvent.stopPropagation();
@@ -84,7 +124,7 @@ const CalendarView = () => {
     return bookingTypeColorClass[tripType] ?? "primary";
   };
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return <LayoutLoader />;
   }
 
@@ -136,7 +176,7 @@ const CalendarView = () => {
 
       <Card className="col-span-12 pt-5 lg:col-span-8 2xl:col-span-9">
         <CardContent className="dash-tail-calendar">
-          {isFetching && !isLoading ? (
+          {isFetching ? (
             <p className="mb-3 text-xs text-default-500">Refreshing bookings...</p>
           ) : null}
           <FullCalendar
@@ -158,6 +198,7 @@ const CalendarView = () => {
             eventClassNames={handleClassName}
             eventClick={handleEventClick}
             dateClick={handleDateClick}
+            datesSet={handleDatesSet}
             dayCellClassNames={handleDayCellClassNames}
             initialView="dayGridMonth"
             initialDate={selectedDate}

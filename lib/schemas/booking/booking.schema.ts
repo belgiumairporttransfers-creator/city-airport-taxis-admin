@@ -73,6 +73,23 @@ export const bookingAdminNoteSchema = z.object({
   createdAt: z.string(),
 });
 
+export const bookingTripPhaseSchema = z.enum([
+  "driver_accepted",
+  "driver_arrived",
+  "passenger_onboard",
+  "trip_started",
+  "completed",
+]);
+
+export const bookingTripSchema = z.object({
+  startedAt: z.string().optional(),
+  completedAt: z.string().optional(),
+  driverArrivedAt: z.string().optional(),
+  passengerBoardedAt: z.string().optional(),
+  actualPickupTime: z.string().optional(),
+  actualDropoffTime: z.string().optional(),
+});
+
 export const bookingSchema = z.object({
   id: z.string(),
   bookingNumber: z.string(),
@@ -93,6 +110,8 @@ export const bookingSchema = z.object({
     assignedAt: z.string().optional(),
     acceptedAt: z.string().optional(),
   }),
+  trip: bookingTripSchema.optional(),
+  tripPhase: bookingTripPhaseSchema.nullable().optional(),
   timeline: z.array(bookingTimelineEntrySchema),
   notes: z.string().optional(),
   adminNotes: z.array(bookingAdminNoteSchema),
@@ -131,7 +150,9 @@ export const getBookingsParamsSchema = z.object({
   limit: z.number().optional(),
   search: z.string().optional(),
   status: bookingStatusSchema.optional(),
+  tripPhase: bookingTripPhaseSchema.optional(),
   paymentStatus: bookingPaymentStatusSchema.optional(),
+  paymentMethod: z.enum(["mollie", "pay_onboard"]).optional(),
   pickupDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Pickup date must be YYYY-MM-DD")
@@ -148,7 +169,11 @@ export const getBookingsParamsSchema = z.object({
 });
 
 export type BookingStatus = z.infer<typeof bookingStatusSchema>;
+export type BookingTripPhase = z.infer<typeof bookingTripPhaseSchema>;
 export type BookingPaymentStatus = z.infer<typeof bookingPaymentStatusSchema>;
+export type BookingPaymentMethod = NonNullable<
+  z.infer<typeof getBookingsParamsSchema>["paymentMethod"]
+>;
 export type Booking = z.infer<typeof bookingSchema>;
 export type BookingDetail = z.infer<typeof bookingDetailSchema>;
 export type BookingsResponse = z.infer<typeof bookingsResponseSchema>;

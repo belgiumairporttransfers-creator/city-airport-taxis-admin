@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, MoreHorizontal, Pencil, Trash2, UserPlus } from "lucide-react";
+import { CheckCircle2, Eye, MoreHorizontal, Pencil, Trash2, UserPlus } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,6 +14,7 @@ import {
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import type { DataTableFilterColumn } from "@/components/data-table/data-table-toolbar";
 import { PICKUP_DATE_PRESET_OPTIONS } from "@/lib/booking-pickup-date-presets";
+import { getBookingDisplayStatus } from "@/lib/booking-status-display";
 import { formatPrice } from "@/lib/utils";
 import type { Booking, BookingStatus } from "@/lib/schemas";
 
@@ -22,26 +23,17 @@ const EUR_SYMBOL = "€";
 const truncateAddress = (value: string, maxLength = 22) =>
   value.length > maxLength ? `${value.slice(0, maxLength)}...` : value;
 
-const bookingStatusLabels: Record<string, string> = {
-  pending: "Pending",
-  confirmed: "Confirmed",
-  accepted: "Accepted",
-  complete: "Complete",
-  cancelled: "Cancelled",
-};
-
-const bookingStatusClasses: Record<string, string> = {
-  pending: "bg-default-50 text-default-700 border border-default-200",
-  confirmed: "bg-primary/10 text-primary border border-transparent",
-  accepted: "bg-info/10 text-info border border-transparent",
-  complete: "bg-success/10 text-success border border-transparent",
-  cancelled: "bg-default-100 text-default-600 border border-transparent",
+const paymentMethodLabels: Record<string, string> = {
+  mollie: "Online",
+  pay_onboard: "Pay onboard",
 };
 
 interface GetBookingColumnsOptions {
   onDelete: (id: string) => void;
   onAssign?: (booking: Booking) => void;
+  onComplete?: (booking: Booking) => void;
   isDeleting?: boolean;
+  isCompleting?: boolean;
 }
 
 export function getBookingFilterColumns(): DataTableFilterColumn[] {
@@ -67,13 +59,24 @@ export function getBookingFilterColumns(): DataTableFilterColumn[] {
         label: option.label,
       })),
     },
+    {
+      column: "paymentMethod",
+      title: "Payment",
+      multiple: false,
+      options: [
+        { value: "mollie", label: "Online" },
+        { value: "pay_onboard", label: "Pay onboard" },
+      ],
+    },
   ];
 }
 
 export function getBookingColumns({
   onDelete,
   onAssign,
+  onComplete,
   isDeleting = false,
+  isCompleting = false,
 }: GetBookingColumnsOptions): ColumnDef<Booking>[] {
   return [
     {
@@ -147,6 +150,25 @@ export function getBookingColumns({
       ),
     },
     {
+      id: "paymentMethod",
+      accessorFn: (row) => row.payment.paymentMethod,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Payment" />,
+      enableColumnFilter: true,
+      filterFn: (row, _columnId, filterValue) => {
+        const values = filterValue as string[] | undefined;
+        if (!values?.length) return true;
+        return values.includes(row.original.payment.paymentMethod);
+      },
+      cell: ({ row }) => {
+        const method = row.original.payment.paymentMethod;
+        return (
+          <span className="text-default-700">
+            {paymentMethodLabels[method] ?? method}
+          </span>
+        );
+      },
+    },
+    {
       id: "vehicle",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Vehicle" />,
       cell: ({ row }) => (
@@ -165,14 +187,12 @@ export function getBookingColumns({
         return values.includes(row.getValue(columnId) as string);
       },
       cell: ({ row }) => {
-        const status = row.original.status;
+        const display = getBookingDisplayStatus(row.original);
         return (
           <span
-            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              bookingStatusClasses[status] ?? "bg-default-100 text-default-600"
-            }`}
+            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${display.className}`}
           >
-            {bookingStatusLabels[status] ?? status}
+            {display.label}
           </span>
         );
       },
@@ -213,6 +233,8 @@ export function getBookingColumns({
       cell: ({ row }) => {
         const canAssign =
           row.original.status === "confirmed" && !row.original.driver?.driverId;
+        const canComplete =
+          row.original.status !== "complete" && row.original.status !== "cancelled";
 
         return (
           <div className="flex justify-end">
@@ -222,13 +244,13 @@ export function getBookingColumns({
                   type="button"
                   size="icon"
                   variant="ghost"
-                  disabled={isDeleting}
+                  disabled={isDeleting || isCompleting}
                   aria-label="Open actions"
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuContent align="end" className="w-40">
                 <DropdownMenuItem asChild>
                   <Link href={`/bookings/${row.original.id}`} className="flex items-center gap-2">
                     <Eye className="h-4 w-4" />
@@ -242,6 +264,16 @@ export function getBookingColumns({
                   >
                     <UserPlus className="h-4 w-4" />
                     Assign
+                  </DropdownMenuItem>
+                ) : null}
+                {canComplete && onComplete ? (
+                  <DropdownMenuItem
+                    className="flex items-center gap-2"
+                    disabled={isCompleting}
+                    onClick={() => onComplete(row.original)}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Mark complete
                   </DropdownMenuItem>
                 ) : null}
                 <DropdownMenuItem asChild>

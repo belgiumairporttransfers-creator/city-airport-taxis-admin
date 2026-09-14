@@ -14,9 +14,23 @@ import {
   useCompleteBooking,
   useDeleteBooking,
 } from "@/hooks/queries/use-bookings";
+import { getBookingDisplayStatus } from "@/lib/booking-status-display";
 import { formatDate, formatDistance, formatPrice, formatTime } from "@/lib/utils";
 
 const EUR_SYMBOL = "€";
+
+const timelineEventLabels: Record<string, string> = {
+  BOOKING_CREATED: "Booking created",
+  PAYMENT_RECEIVED: "Payment received",
+  BOOKING_CONFIRMED: "Booking confirmed",
+  DRIVER_ASSIGNED: "Driver assigned",
+  DRIVER_ACCEPTED: "Driver accepted",
+  DRIVER_ARRIVED: "Driver arrived",
+  PASSENGER_ONBOARD: "Passenger onboard",
+  TRIP_STARTED: "Trip started",
+  TRIP_COMPLETED: "Trip completed",
+  BOOKING_CANCELLED: "Booking cancelled",
+};
 
 const BookingDetailPage = () => {
   const params = useParams<{ id: string }>();
@@ -60,7 +74,9 @@ const BookingDetailPage = () => {
   };
 
   const canAssign = data.status === "confirmed" && !data.driver?.driverId;
-  const canComplete = data.status === "accepted";
+  const canComplete = data.status !== "complete" && data.status !== "cancelled";
+  const displayStatus = getBookingDisplayStatus(data);
+  const trip = data.trip;
 
   return (
     <>
@@ -121,7 +137,13 @@ const BookingDetailPage = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <p className="text-xs text-default-500">Status</p>
-                <p className="font-medium capitalize text-default-900">{data.status}</p>
+                <p className="mt-1">
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${displayStatus.className}`}
+                  >
+                    {displayStatus.label}
+                  </span>
+                </p>
               </div>
               <div>
                 <p className="text-xs text-default-500">Payment status</p>
@@ -187,6 +209,51 @@ const BookingDetailPage = () => {
                 <p className="text-default-900">{data.notes}</p>
               </div>
             ) : null}
+
+            {trip &&
+            (trip.driverArrivedAt ||
+              trip.passengerBoardedAt ||
+              trip.startedAt ||
+              trip.completedAt) ? (
+              <div>
+                <p className="mb-2 text-xs text-default-500">Trip progress</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {trip.driverArrivedAt ? (
+                    <div>
+                      <p className="text-xs text-default-500">Driver arrived</p>
+                      <p className="font-medium text-default-900">
+                        {formatDate(trip.driverArrivedAt)} {formatTime(trip.driverArrivedAt)}
+                      </p>
+                    </div>
+                  ) : null}
+                  {trip.passengerBoardedAt ? (
+                    <div>
+                      <p className="text-xs text-default-500">Passenger onboard</p>
+                      <p className="font-medium text-default-900">
+                        {formatDate(trip.passengerBoardedAt)}{" "}
+                        {formatTime(trip.passengerBoardedAt)}
+                      </p>
+                    </div>
+                  ) : null}
+                  {trip.startedAt ? (
+                    <div>
+                      <p className="text-xs text-default-500">Trip started</p>
+                      <p className="font-medium text-default-900">
+                        {formatDate(trip.startedAt)} {formatTime(trip.startedAt)}
+                      </p>
+                    </div>
+                  ) : null}
+                  {trip.completedAt ? (
+                    <div>
+                      <p className="text-xs text-default-500">Trip completed</p>
+                      <p className="font-medium text-default-900">
+                        {formatDate(trip.completedAt)} {formatTime(trip.completedAt)}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -230,6 +297,28 @@ const BookingDetailPage = () => {
               </p>
             </CardContent>
           </Card>
+
+          {data.timeline.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Timeline</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {[...data.timeline]
+                  .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+                  .map((entry, index) => (
+                    <div key={`${entry.event}-${entry.at}-${index}`} className="space-y-0.5">
+                      <p className="font-medium text-default-900">
+                        {timelineEventLabels[entry.event] ?? entry.event}
+                      </p>
+                      <p className="text-default-500">
+                        {formatDate(entry.at)} {formatTime(entry.at)}
+                      </p>
+                    </div>
+                  ))}
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </div>
 
