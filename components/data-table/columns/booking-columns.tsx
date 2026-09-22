@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, Eye, MoreHorizontal, Pencil, Trash2, UserPlus } from "lucide-react";
+import { CheckCircle2, Eye, MapPin, MoreHorizontal, Pencil, Trash2, UserPlus } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,18 +20,109 @@ import type { Booking, BookingStatus } from "@/lib/schemas";
 
 const EUR_SYMBOL = "€";
 
-const truncateAddress = (value: string, maxLength = 22) =>
+const truncateAddress = (value: string, maxLength = 36) =>
   value.length > maxLength ? `${value.slice(0, maxLength)}...` : value;
+
+/* ── Payment method labels & styles ─────────────────────────── */
 
 const paymentMethodLabels: Record<string, string> = {
   mollie: "Online",
-  pay_onboard: "Pay onboard",
+  pay_onboard: "Cash",
 };
 
 const paymentMethodClasses: Record<string, string> = {
-  mollie: "bg-primary/10 text-primary border border-transparent",
-  pay_onboard: "bg-warning/10 text-warning border border-transparent",
+  mollie: "text-primary",
+  pay_onboard: "text-warning",
 };
+
+/* ── Category (trip type) labels & styles ───────────────────── */
+
+const categoryLabels: Record<string, string> = {
+  "one-way": "One way",
+  hourly: "Hourly",
+  "return-trip": "Return trip",
+};
+
+const categoryClasses: Record<string, string> = {
+  "one-way": "bg-warning/10 text-warning border border-transparent",
+  hourly: "bg-info/10 text-info border border-transparent",
+  "return-trip": "bg-primary/10 text-primary border border-transparent",
+};
+
+/* ── Time & Date formatting helpers ─────────────────────────── */
+
+const formatPickupTime = (time?: string | null): string => {
+  if (!time) return "";
+  const cleaned = time.trim();
+
+  // If already contains AM or PM (e.g. "6:00 AM" or "9:15 PM AM")
+  const ampmMatch = cleaned.match(/^(\d{1,2}):(\d{2})(?:\s*([ap]m))(?:\s*[ap]m)?$/i);
+  if (ampmMatch) {
+    const hours = parseInt(ampmMatch[1], 10);
+    const minutes = ampmMatch[2];
+    const ampm = ampmMatch[3].toUpperCase();
+    const displayHour = hours % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  }
+
+  // If 24-hour time e.g. "16:50" or "06:00"
+  const time24Match = cleaned.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (time24Match) {
+    const hours = parseInt(time24Match[1], 10);
+    const minutes = time24Match[2];
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const displayHour = hours % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  }
+
+  // If ISO date string e.g. "2026-03-11T16:50:00.000Z"
+  if (cleaned.includes("T")) {
+    const date = new Date(cleaned);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
+  }
+
+  return cleaned;
+};
+
+const formatPickupDate = (dateStr?: string | null): string => {
+  if (!dateStr) return "";
+  const cleaned = dateStr.trim();
+
+  // Extract YYYY-MM-DD from string or ISO timestamp
+  const isoMatch = cleaned.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const year = parseInt(isoMatch[1], 10);
+    const month = parseInt(isoMatch[2], 10) - 1;
+    const day = parseInt(isoMatch[3], 10);
+    const date = new Date(year, month, day);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    }
+  }
+
+  const date = new Date(cleaned);
+  if (!isNaN(date.getTime())) {
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  return cleaned;
+};
+
+/* ── Filter columns ─────────────────────────────────────────── */
 
 interface GetBookingColumnsOptions {
   onDelete: (id: string) => void;
@@ -70,11 +161,13 @@ export function getBookingFilterColumns(): DataTableFilterColumn[] {
       multiple: false,
       options: [
         { value: "mollie", label: "Online" },
-        { value: "pay_onboard", label: "Pay onboard" },
+        { value: "pay_onboard", label: "Cash" },
       ],
     },
   ];
 }
+
+/* ── Table columns ──────────────────────────────────────────── */
 
 export function getBookingColumns({
   onDelete,
@@ -84,6 +177,7 @@ export function getBookingColumns({
   isCompleting = false,
 }: GetBookingColumnsOptions): ColumnDef<Booking>[] {
   return [
+    /* ── Select ───────────────────────────────────────────── */
     {
       id: "select",
       header: ({ table }) => (
@@ -108,59 +202,116 @@ export function getBookingColumns({
       enableSorting: false,
       enableHiding: false,
     },
+
+    /* ── Booking ID ── payment method label + booking # ───── */
     {
       accessorKey: "bookingNumber",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Booking ID" />,
-      cell: ({ row }) => (
-        <span className="font-semibold text-default-900">{row.getValue("bookingNumber")}</span>
-      ),
+      cell: ({ row }) => {
+        const method = row.original.payment.paymentMethod;
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span
+              className={`text-[11px] font-semibold leading-none ${
+                paymentMethodClasses[method] ?? "text-default-500"
+              }`}
+            >
+              {paymentMethodLabels[method] ?? method}
+            </span>
+            <span className="font-semibold text-default-900 text-sm">
+              {row.getValue("bookingNumber")}
+            </span>
+          </div>
+        );
+      },
     },
+
+    /* ── Customer ── name + email ─────────────────────────── */
     {
       id: "customer",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Customer" />,
       cell: ({ row }) => (
-        <span className="font-semibold text-default-900">
-          {row.original.customer.firstName}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="font-semibold text-default-900 text-sm">
+            {row.original.customer.firstName}
+          </span>
+          <span className="text-[11px] text-default-500 truncate max-w-[180px]">
+            {row.original.customer.email}
+          </span>
+        </div>
       ),
     },
-    {
-      id: "driver",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Driver" />,
-      cell: ({ row }) => {
-        const driver = row.original.driver;
-        const name =
-          driver?.name ||
-          [driver?.firstName, driver?.lastName].filter(Boolean).join(" ").trim();
 
+    /* ── Type ── category badge ───────────────────────────── */
+    {
+      id: "type",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
+      cell: ({ row }) => {
+        const cat = row.original.category;
         return (
-          <span className="font-medium text-default-900">
-            {name || "—"}
+          <span
+            className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              categoryClasses[cat] ?? "bg-default-100 text-default-700 border border-transparent"
+            }`}
+          >
+            {categoryLabels[cat] ?? cat}
           </span>
         );
       },
     },
+
+    /* ── Route ── pickup (green) + dropoff (red) ─────────── */
     {
-      id: "pickup",
+      id: "route",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Route" />,
+      cell: ({ row }) => (
+        <div className="flex flex-col gap-1 min-w-[200px] max-w-[280px]">
+          <div className="flex items-center gap-1.5">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-success" />
+            <span
+              className="text-xs text-default-700 truncate"
+              title={row.original.route.pickupAddress}
+            >
+              {truncateAddress(row.original.route.pickupAddress)}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-destructive" />
+            <span
+              className="text-xs text-default-700 truncate"
+              title={row.original.route.dropoffAddress}
+            >
+              {truncateAddress(row.original.route.dropoffAddress || "—")}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+
+    /* ── Pickup date/time ── time (bold) + date ──────────── */
+    {
+      id: "pickupDate",
+      accessorFn: (row) => row.route.pickupDate,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Pickup" />,
+      enableColumnFilter: true,
+      filterFn: (row, _columnId, filterValue) => {
+        const values = filterValue as string[] | undefined;
+        if (!values?.length) return true;
+        return values.includes(row.original.route.pickupDate);
+      },
       cell: ({ row }) => (
-        <span className="max-w-[180px] truncate text-default-600" title={row.original.route.pickupAddress}>
-          {truncateAddress(row.original.route.pickupAddress)}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="font-semibold text-default-900 text-sm whitespace-nowrap">
+            {formatPickupTime(row.original.route.pickupTime)}
+          </span>
+          <span className="text-[11px] text-default-500 whitespace-nowrap">
+            {formatPickupDate(row.original.route.pickupDate)}
+          </span>
+        </div>
       ),
     },
-    {
-      id: "delivery",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Delivery" />,
-      cell: ({ row }) => (
-        <span
-          className="max-w-[180px] truncate text-default-600"
-          title={row.original.route.dropoffAddress}
-        >
-          {truncateAddress(row.original.route.dropoffAddress)}
-        </span>
-      ),
-    },
+
+    /* ── Amount ───────────────────────────────────────────── */
     {
       id: "amount",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Amount" />,
@@ -170,39 +321,33 @@ export function getBookingColumns({
         </span>
       ),
     },
+
+    /* ── Payment method (hidden – used for filtering only) ── */
     {
       id: "paymentMethod",
       accessorFn: (row) => row.payment.paymentMethod,
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Payment" />,
       enableColumnFilter: true,
       filterFn: (row, _columnId, filterValue) => {
         const values = filterValue as string[] | undefined;
         if (!values?.length) return true;
         return values.includes(row.original.payment.paymentMethod);
       },
-      cell: ({ row }) => {
-        const method = row.original.payment.paymentMethod;
-        return (
-          <span
-            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              paymentMethodClasses[method] ??
-              "bg-default-100 text-default-700 border border-transparent"
-            }`}
-          >
-            {paymentMethodLabels[method] ?? method}
-          </span>
-        );
-      },
+      header: () => null,
+      cell: () => null,
     },
+
+    /* ── Vehicle ─────────────────────────────────────────── */
     {
       id: "vehicle",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Vehicle" />,
       cell: ({ row }) => (
-        <span className="inline-flex rounded-full bg-default-100 px-2.5 py-0.5 text-xs font-medium text-default-700">
+        <span className="text-sm text-default-700">
           {row.original.vehicle.categoryName}
         </span>
       ),
     },
+
+    /* ── Status ───────────────────────────────────────────── */
     {
       accessorKey: "status",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
@@ -224,6 +369,7 @@ export function getBookingColumns({
       },
     },
 
+    /* ── Actions ──────────────────────────────────────────── */
     {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,

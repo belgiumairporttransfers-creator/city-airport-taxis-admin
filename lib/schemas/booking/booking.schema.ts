@@ -183,6 +183,7 @@ export type BookingsResponse = z.infer<typeof bookingsResponseSchema>;
 export type GetBookingsParams = z.infer<typeof getBookingsParamsSchema>;
 
 export const updateBookingFormSchema = z.object({
+  status: z.string().optional(),
   customerFirstName: z.string().trim().min(1, "First name is required").max(100),
   customerLastName: z.string().trim().min(1, "Last name is required").max(100),
   customerEmail: z.string().trim().email("Valid email is required").max(255),
@@ -219,6 +220,7 @@ export const updateBookingFormSchema = z.object({
 export type UpdateBookingFormSchema = z.infer<typeof updateBookingFormSchema>;
 
 export type UpdateBookingPayload = {
+  status?: string;
   customerFirstName: string;
   customerLastName: string;
   customerEmail: string;
@@ -243,6 +245,7 @@ export type UpdateBookingPayload = {
 export const toUpdateBookingPayload = (
   values: UpdateBookingFormSchema
 ): UpdateBookingPayload => ({
+  ...(values.status ? { status: values.status } : {}),
   customerFirstName: values.customerFirstName.trim(),
   customerLastName: values.customerLastName.trim(),
   customerEmail: values.customerEmail.trim(),
@@ -266,24 +269,39 @@ export const toUpdateBookingPayload = (
 
 export const fromBookingDetailToUpdateForm = (
   booking: BookingDetail
-): UpdateBookingFormSchema => ({
-  customerFirstName: booking.customer.firstName,
-  customerLastName: booking.customer.lastName,
-  customerEmail: booking.customer.email,
-  customerPhone: booking.customer.phone,
-  pickupAddress: booking.route.pickupAddress,
-  dropoffAddress: booking.route.dropoffAddress ?? "",
-  pickupDate: booking.route.pickupDate,
-  pickupTime: booking.route.pickupTime,
-  returnDate: booking.route.returnDate ?? "",
-  returnTime: booking.route.returnTime ?? "",
-  notes: booking.notes ?? "",
-  flightNumber: booking.flight.flightNumber ?? "",
-  terminal: booking.flight.terminal ?? "",
-  passengers: booking.vehicle.passengers,
-  luggage: booking.vehicle.luggage,
-  handLuggage: booking.vehicle.handLuggage ?? 0,
-  smallCheckedCase: booking.vehicle.smallCheckedCase ?? 0,
-  largeCheckedCase: booking.vehicle.largeCheckedCase ?? 0,
-  adminNote: "",
-});
+): UpdateBookingFormSchema => {
+  let status = booking.status;
+  if (booking.status === "accepted" && booking.tripPhase) {
+    if (booking.tripPhase === "driver_arrived") status = "driver_arrived" as any;
+    else if (
+      booking.tripPhase === "passenger_onboard" ||
+      booking.tripPhase === "trip_started"
+    )
+      status = "passenger_onboard" as any;
+  } else if (booking.status === "complete") {
+    status = "complete" as any;
+  }
+
+  return {
+    status,
+    customerFirstName: booking.customer.firstName,
+    customerLastName: booking.customer.lastName,
+    customerEmail: booking.customer.email,
+    customerPhone: booking.customer.phone,
+    pickupAddress: booking.route.pickupAddress,
+    dropoffAddress: booking.route.dropoffAddress ?? "",
+    pickupDate: booking.route.pickupDate,
+    pickupTime: booking.route.pickupTime,
+    returnDate: booking.route.returnDate ?? "",
+    returnTime: booking.route.returnTime ?? "",
+    notes: booking.notes ?? "",
+    flightNumber: booking.flight.flightNumber ?? "",
+    terminal: booking.flight.terminal ?? "",
+    passengers: booking.vehicle.passengers,
+    luggage: booking.vehicle.luggage,
+    handLuggage: booking.vehicle.handLuggage ?? 0,
+    smallCheckedCase: booking.vehicle.smallCheckedCase ?? 0,
+    largeCheckedCase: booking.vehicle.largeCheckedCase ?? 0,
+    adminNote: "",
+  };
+};

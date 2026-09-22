@@ -80,7 +80,9 @@ export interface DataTableProps<TData, TValue = unknown> {
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
   onBulkDelete?: (selectedRows: TData[]) => void | Promise<void>;
+  onBulkComplete?: (selectedRows: TData[]) => void | Promise<void>;
   isDeleting?: boolean;
+  isCompleting?: boolean;
   reorderable?: boolean;
   getRowId?: (row: TData) => string;
   onReorder?: (orderedIds: string[]) => void;
@@ -159,7 +161,9 @@ export function DataTable<TData, TValue = unknown>({
   onPageChange,
   onPageSizeChange,
   onBulkDelete,
+  onBulkComplete,
   isDeleting = false,
+  isCompleting = false,
   reorderable = false,
   getRowId = getDefaultRowId,
   onReorder,
@@ -335,7 +339,9 @@ export function DataTable<TData, TValue = unknown>({
           filterColumns={filterColumns}
           manualFiltering={manualFiltering}
           onBulkDelete={onBulkDelete}
+          onBulkComplete={onBulkComplete}
           isDeleting={isDeleting}
+          isCompleting={isCompleting}
         />
       )}
 

@@ -20,6 +20,15 @@ import {
   type UpdateBookingFormSchema,
 } from "@/lib/schemas";
 
+const statusOptions = [
+  { value: "confirmed", label: "Confirmed" },
+  { value: "passenger_onboard", label: "Pax Onboard" },
+  { value: "driver_arrived", label: "Arrived" },
+  { value: "complete", label: "Completed" },
+  { value: "pending", label: "Pending" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
 const EditBookingPage = () => {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -30,6 +39,7 @@ const EditBookingPage = () => {
     resolver: zodResolver(updateBookingFormSchema),
     mode: "onChange",
     defaultValues: {
+      status: "confirmed",
       customerFirstName: "",
       customerLastName: "",
       customerEmail: "",
@@ -149,6 +159,14 @@ const EditBookingPage = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
+                  <Input
+                    name="status"
+                    type="select"
+                    label="Booking status"
+                    options={statusOptions}
+                  />
+                </div>
+                <div className="sm:col-span-2">
                   <Input name="pickupAddress" label="Pickup address" />
                 </div>
                 {!isHourly ? (
@@ -197,20 +215,18 @@ const EditBookingPage = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Input name="flightNumber" label="Flight number" placeholder="Optional" />
-                <Input name="terminal" label="Terminal" placeholder="Optional" />
+                <Input name="flightNumber" label="Flight number" />
+                <Input name="terminal" label="Terminal" />
               </div>
               <Input
                 name="notes"
                 type="textarea"
                 label="Customer notes"
-                placeholder="Notes shared with the customer"
               />
               <Input
                 name="adminNote"
                 type="textarea"
                 label="Internal admin note"
-                placeholder="Optional — not emailed to the customer"
               />
             </CardContent>
           </Card>

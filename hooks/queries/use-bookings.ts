@@ -1,4 +1,5 @@
 import {
+  bulkCompleteBookings,
   bulkDeleteBookings,
   completeBooking,
   deleteBooking,
@@ -34,7 +35,7 @@ export const useCalendarBookings = (range?: {
       getBookings({
         page: 1,
         limit: 100,
-        sort: "route.pickupDate",
+        sort: "route.pickupDate,route.pickupTime",
         pickupDateFrom: range?.pickupDateFrom,
         pickupDateTo: range?.pickupDateTo,
       }),
@@ -119,6 +120,25 @@ export const useBulkDeleteBookings = () => {
     },
     onError: (error: ApiError) => {
       toast.error(error?.message || "Failed to delete bookings.");
+    },
+  });
+};
+
+export const useBulkCompleteBookings = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: bulkCompleteBookings,
+    onSuccess: async (_, ids) => {
+      toast.success(
+        ids.length === 1
+          ? "Booking marked as complete"
+          : `${ids.length} bookings marked as complete`
+      );
+      await queryClient.invalidateQueries({ queryKey: BOOKINGS_QUERY_KEY });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "Failed to mark bookings as complete.");
     },
   });
 };

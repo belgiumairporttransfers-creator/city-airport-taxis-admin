@@ -13,6 +13,7 @@ import {
 import AssignBookingModel from "@/components/models/assign-booking-model";
 import {
   useBookings,
+  useBulkCompleteBookings,
   useBulkDeleteBookings,
   useCompleteBooking,
   useDeleteBooking,
@@ -73,6 +74,8 @@ const BookingsListPage = ({ viewKey }: BookingsListPageProps) => {
   const { mutateAsync: removeBookings, isPending: isDeletingBulk } =
     useBulkDeleteBookings();
   const { mutate: markComplete, isPending: isCompleting } = useCompleteBooking();
+  const { mutateAsync: completeBookings, isPending: isCompletingBulk } =
+    useBulkCompleteBookings();
 
   const columnFilters = React.useMemo<ColumnFiltersState>(() => {
     const filters: ColumnFiltersState = [];
@@ -143,6 +146,10 @@ const BookingsListPage = ({ viewKey }: BookingsListPageProps) => {
     await removeBookings(selectedRows.map((row) => row.id));
   };
 
+  const handleBulkComplete = async (selectedRows: { id: string }[]) => {
+    await completeBookings(selectedRows.map((row) => row.id));
+  };
+
   const pagination = data?.meta
     ? {
         total: data.meta.total,
@@ -179,7 +186,7 @@ const BookingsListPage = ({ viewKey }: BookingsListPageProps) => {
             filterColumns={filterColumns}
             columnFilters={columnFilters}
             onColumnFiltersChange={handleColumnFiltersChange}
-            initialColumnVisibility={{ pickupDate: false }}
+            initialColumnVisibility={{ paymentMethod: false }}
             manualFiltering
             searchKey="bookingNumber"
             searchPlaceholder="Search by booking #, customer, or address"
@@ -198,7 +205,9 @@ const BookingsListPage = ({ viewKey }: BookingsListPageProps) => {
               setLimit(pageSize);
             }}
             onBulkDelete={handleBulkDelete}
+            onBulkComplete={handleBulkComplete}
             isDeleting={isDeletingOne || isDeletingBulk}
+            isCompleting={isCompleting || isCompletingBulk}
             getRowId={(row) => row.id}
           />
         </CardContent>

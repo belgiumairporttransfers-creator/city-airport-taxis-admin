@@ -30,3 +30,7 @@ export const deleteBooking = async (id: string) => {
 export const bulkDeleteBookings = async (ids: string[]) => {
   return api.delete(`${API_ROUTES.BOOKINGS}/bulk`, { data: { ids } });
 };
+
+export const bulkCompleteBookings = async (ids: string[]) => {
+  return api.post(`${API_ROUTES.BOOKINGS}/bulk-complete`, { ids });
+};

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { X, Trash2 } from "lucide-react";
+import { X, Trash2, CheckCircle2 } from "lucide-react";
 import { Table } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,9 @@ interface DataTableToolbarProps<TData> {
   filterColumns?: DataTableFilterColumn[];
   manualFiltering?: boolean;
   onBulkDelete?: (selectedRows: TData[]) => void | Promise<void>;
+  onBulkComplete?: (selectedRows: TData[]) => void | Promise<void>;
   isDeleting?: boolean;
+  isCompleting?: boolean;
 }
 
 export function DataTableToolbar<TData>({
@@ -37,7 +39,9 @@ export function DataTableToolbar<TData>({
   filterColumns = [],
   manualFiltering = false,
   onBulkDelete,
+  onBulkComplete,
   isDeleting = false,
+  isCompleting = false,
 }: DataTableToolbarProps<TData>) {
   const [localSearch, setLocalSearch] = React.useState(searchValue ?? "");
   const isServerSearch = Boolean(onSearchChange);
@@ -88,6 +92,12 @@ export function DataTableToolbar<TData>({
     }
   };
 
+  const handleBulkComplete = () => {
+    if (onBulkComplete && hasSelectedRows) {
+      void onBulkComplete(selectedRows.map((row) => row.original));
+    }
+  };
+
   return (
     <div className="flex flex-1 flex-wrap items-center gap-2">
       {searchKey && (
@@ -123,6 +133,18 @@ export function DataTableToolbar<TData>({
           >
             Reset
             <X className="ltr:ml-2 rtl:mr-2 h-4 w-4" />
+          </Button>
+        )}
+
+        {hasSelectedRows && onBulkComplete && (
+          <Button
+            color="success"
+            onClick={handleBulkComplete}
+            disabled={isCompleting}
+            className="!h-8 !px-3"
+          >
+            <CheckCircle2 className="ltr:mr-2 rtl:ml-2 h-4 w-4" />
+            Complete {selectedRows.length} selected
           </Button>
         )}
 
