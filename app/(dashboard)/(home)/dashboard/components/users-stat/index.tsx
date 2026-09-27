@@ -10,30 +10,30 @@ interface Users {
 }
 
 const UsersStat = () => {
-  const usersData:Users[] = [
+  const usersData: Users[] = [
     {
       id: 1,
-      country: "Bangladesh",
-      count: "05",
+      country: "Belgium",
+      count: "38",
     },
     {
       id: 2,
-      country: "India",
-      count: "06",
+      country: "France",
+      count: "14",
     },
     {
       id: 3,
-      country: "Pakistan",
-      count: "06",
+      country: "Netherlands",
+      count: "12",
     },
     {
       id: 4,
-      country: "Australia",
-      count: "10",
+      country: "Germany",
+      count: "09",
     },
     {
       id: 5,
-      country: "America",
+      country: "United Kingdom",
       count: "08",
     },
   ];
