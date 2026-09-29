@@ -42,6 +42,11 @@ export const menus: MenuItem[] = [
         href: "/dashboard",
         icon: Graph,
       },
+      {
+        title: "Users",
+        href: "/users",
+        icon: Users,
+      },
     ],
   },
   {

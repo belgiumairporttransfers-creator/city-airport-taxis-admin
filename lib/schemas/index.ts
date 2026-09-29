@@ -10,3 +10,4 @@ export * from "./settings";
 export * from "./vehicle";
 export * from "./trip";
 export * from "./wallet";
+export * from "./user";

@@ -27,6 +27,7 @@ const API_ROUTES = {
     ASSIGNMENTS: "/admin/assignments",
     PAYMENTS: "/admin/payments",
     DASHBOARD: "/admin/dashboard",
+    USERS: "/admin/users",
     UPLOAD: "/upload",
 };
 
