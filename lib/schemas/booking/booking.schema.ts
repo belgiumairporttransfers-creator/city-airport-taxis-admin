@@ -118,6 +118,9 @@ export const bookingSchema = z.object({
   timeline: z.array(bookingTimelineEntrySchema),
   notes: z.string().optional(),
   adminNotes: z.array(bookingAdminNoteSchema),
+  relatedBookingId: z.string().optional(),
+  relatedBookingNumber: z.string().optional(),
+  tripLeg: z.enum(["outbound", "return"]).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

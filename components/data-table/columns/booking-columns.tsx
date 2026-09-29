@@ -212,9 +212,8 @@ export function getBookingColumns({
         return (
           <div className="flex flex-col gap-0.5">
             <span
-              className={`text-[11px] font-semibold leading-none ${
-                paymentMethodClasses[method] ?? "text-default-500"
-              }`}
+              className={`text-[11px] font-semibold leading-none ${paymentMethodClasses[method] ?? "text-default-500"
+                }`}
             >
               {paymentMethodLabels[method] ?? method}
             </span>
@@ -248,13 +247,20 @@ export function getBookingColumns({
       header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
       cell: ({ row }) => {
         const cat = row.original.category;
+        const leg = row.original.tripLeg;
+        const label =
+          cat === "return-trip" && leg
+            ? leg === "outbound"
+              ? "Return (Outward)"
+              : "Return (Inward)"
+            : categoryLabels[cat] ?? cat;
         return (
           <span
             className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${
               categoryClasses[cat] ?? "bg-default-100 text-default-700 border border-transparent"
             }`}
           >
-            {categoryLabels[cat] ?? cat}
+            {label}
           </span>
         );
       },
@@ -304,7 +310,7 @@ export function getBookingColumns({
           <span className="font-semibold text-default-900 text-sm whitespace-nowrap">
             {formatPickupTime(row.original.route.pickupTime)}
           </span>
-          <span className="text-[11px] text-default-500 whitespace-nowrap">
+          <span className="font-semibold text-default-900 text-sm whitespace-nowrap">
             {formatPickupDate(row.original.route.pickupDate)}
           </span>
         </div>

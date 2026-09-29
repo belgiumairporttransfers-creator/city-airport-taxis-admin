@@ -32,6 +32,80 @@ const timelineEventLabels: Record<string, string> = {
   BOOKING_CANCELLED: "Booking cancelled",
 };
 
+const formatDisplayTime = (time?: string | null): string => {
+  if (!time) return "";
+  const cleaned = time.trim();
+
+  const ampmMatch = cleaned.match(/^(\d{1,2}):(\d{2})(?:\s*([ap]m))(?:\s*[ap]m)?$/i);
+  if (ampmMatch) {
+    const hours = parseInt(ampmMatch[1], 10);
+    const minutes = ampmMatch[2];
+    const ampm = ampmMatch[3].toUpperCase();
+    const displayHour = hours % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  }
+
+  const time24Match = cleaned.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (time24Match) {
+    const hours = parseInt(time24Match[1], 10);
+    const minutes = time24Match[2];
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const displayHour = hours % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  }
+
+  if (cleaned.includes("T")) {
+    const date = new Date(cleaned);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
+  }
+
+  return cleaned;
+};
+
+const formatDisplayDate = (dateStr?: string | null): string => {
+  if (!dateStr) return "";
+  const cleaned = dateStr.trim();
+
+  const isoMatch = cleaned.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const year = parseInt(isoMatch[1], 10);
+    const month = parseInt(isoMatch[2], 10) - 1;
+    const day = parseInt(isoMatch[3], 10);
+    const date = new Date(year, month, day);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    }
+  }
+
+  const date = new Date(cleaned);
+  if (!isNaN(date.getTime())) {
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  return cleaned;
+};
+
+const formatDateTime = (dateStr?: string | null, timeStr?: string | null): string => {
+  const d = formatDisplayDate(dateStr);
+  const t = formatDisplayTime(timeStr);
+  if (d && t) return `${d}, ${t}`;
+  return d || t || "—";
+};
+
 const BookingDetailPage = () => {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -78,6 +152,20 @@ const BookingDetailPage = () => {
   const displayStatus = getBookingDisplayStatus(data);
   const trip = data.trip;
 
+  const returnDate =
+    data.route.returnDate ||
+    (data as any).returnDate ||
+    (data as any).route?.return_date ||
+    (data as any).step1?.returnDate;
+
+  const returnTime =
+    data.route.returnTime ||
+    (data as any).returnTime ||
+    (data as any).route?.return_time ||
+    (data as any).step1?.returnTime;
+
+  const isReturnTrip = data.category === "return-trip" || Boolean(returnDate);
+
   return (
     <>
       <Breadcrumbs>
@@ -92,9 +180,28 @@ const BookingDetailPage = () => {
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-default-900">{data.bookingNumber}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold text-default-900">{data.bookingNumber}</h1>
+            {data.tripLeg ? (
+              <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                {data.tripLeg === "outbound" ? "Outward Leg" : "Return Leg"}
+              </span>
+            ) : null}
+          </div>
           <p className="text-sm text-default-500">
             Booking ID: <span className="font-mono text-default-700">{data.id}</span>
+            {data.relatedBookingId ? (
+              <span className="ml-3">
+                Linked trip:{" "}
+                <Link
+                  href={`/bookings/${data.relatedBookingId}`}
+                  className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
+                >
+                  {data.relatedBookingNumber || "View linked booking"} (
+                  {data.tripLeg === "outbound" ? "Return leg" : "Outward leg"})
+                </Link>
+              </span>
+            ) : null}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -170,17 +277,18 @@ const BookingDetailPage = () => {
                 <p className="font-medium text-default-900">{data.vehicle.categoryName}</p>
               </div>
               <div>
-                <p className="text-xs text-default-500">Pickup date</p>
+                <p className="text-xs text-default-500">Pickup date & time</p>
                 <p className="font-medium text-default-900">
-                  {data.route.pickupDate} {data.route.pickupTime}
+                  {formatDateTime(data.route.pickupDate, data.route.pickupTime)}
                 </p>
               </div>
-              {data.route.returnDate ? (
+              {isReturnTrip ? (
                 <div>
-                  <p className="text-xs text-default-500">Return date</p>
+                  <p className="text-xs text-default-500">Return date & time</p>
                   <p className="font-medium text-default-900">
-                    {data.route.returnDate}
-                    {data.route.returnTime ? ` ${data.route.returnTime}` : ""}
+                    {returnDate
+                      ? formatDateTime(returnDate, returnTime)
+                      : "Return trip (not specified)"}
                   </p>
                 </div>
               ) : null}
@@ -204,8 +312,8 @@ const BookingDetailPage = () => {
             </div>
 
             {data.route.airportPickup ||
-            data.flight?.flightNumber ||
-            data.flight?.terminal ? (
+              data.flight?.flightNumber ||
+              data.flight?.terminal ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <p className="text-xs text-default-500">Airport pickup</p>
@@ -236,10 +344,10 @@ const BookingDetailPage = () => {
             ) : null}
 
             {trip &&
-            (trip.driverArrivedAt ||
-              trip.passengerBoardedAt ||
-              trip.startedAt ||
-              trip.completedAt) ? (
+              (trip.driverArrivedAt ||
+                trip.passengerBoardedAt ||
+                trip.startedAt ||
+                trip.completedAt) ? (
               <div>
                 <p className="mb-2 text-xs text-default-500">Trip progress</p>
                 <div className="grid gap-3 sm:grid-cols-2">
