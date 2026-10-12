@@ -58,6 +58,7 @@ const EditBookingPage = () => {
       handLuggage: 0,
       smallCheckedCase: 0,
       largeCheckedCase: 0,
+      pricingTotal: 0,
       adminNote: "",
     },
   });
@@ -206,6 +207,27 @@ const EditBookingPage = () => {
                 <Input name="smallCheckedCase" type="number" label="Small" min={0} max={20} />
                 <Input name="largeCheckedCase" type="number" label="Large" min={0} max={20} />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Pricing</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Input
+                  name="pricingTotal"
+                  type="number"
+                  label="Total price (€)"
+                  min={0}
+                  step={0.01}
+                />
+              </div>
+              <p className="mt-2 text-xs text-default-500">
+                Changing the total also updates the linked payment amount. It does not change
+                an already-captured Mollie charge.
+              </p>
             </CardContent>
           </Card>
 

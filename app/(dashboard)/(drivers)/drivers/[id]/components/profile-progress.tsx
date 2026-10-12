@@ -56,11 +56,12 @@ const getProfileCompletionChecks = (driver: DriverApplication): CompletionCheck[
     },
   ];
 
+  const hasBundledUploads = (driver.documentUploads?.filter(Boolean).length ?? 0) >= 6;
   const missingDocuments = DRIVER_DOCUMENT_FIELDS.filter(
     (field) => !driver.documents?.[field]?.trim()
   );
 
-  if (missingDocuments.length === 0) {
+  if (hasBundledUploads || missingDocuments.length === 0) {
     checks.push({
       label: "Required documents",
       isComplete: true,

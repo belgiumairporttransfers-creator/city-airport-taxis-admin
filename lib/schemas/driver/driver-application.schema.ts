@@ -46,6 +46,7 @@ export const driverApplicationSchema = z.object({
   skills: z.array(z.string()),
   reviews: z.array(driverReviewSchema).optional(),
   documents: driverDocumentsSchema.optional(),
+  documentUploads: z.array(z.string()).optional(),
   reviewNotes: z.string().optional(),
   reviewedBy: z.string().optional(),
   reviewedAt: z.string().optional(),

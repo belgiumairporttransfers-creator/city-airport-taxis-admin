@@ -217,6 +217,7 @@ export const updateBookingFormSchema = z.object({
   handLuggage: z.coerce.number().int().min(0).max(20),
   smallCheckedCase: z.coerce.number().int().min(0).max(20),
   largeCheckedCase: z.coerce.number().int().min(0).max(20),
+  pricingTotal: z.coerce.number().min(0, "Price must be 0 or more").max(100000),
   adminNote: z.string().max(5000).optional(),
 });
 
@@ -242,6 +243,7 @@ export type UpdateBookingPayload = {
   handLuggage: number;
   smallCheckedCase: number;
   largeCheckedCase: number;
+  pricingTotal: number;
   adminNote?: string;
 };
 
@@ -267,6 +269,7 @@ export const toUpdateBookingPayload = (
   handLuggage: values.handLuggage,
   smallCheckedCase: values.smallCheckedCase,
   largeCheckedCase: values.largeCheckedCase,
+  pricingTotal: Math.round(Number(values.pricingTotal) * 100) / 100,
   ...(values.adminNote?.trim() ? { adminNote: values.adminNote.trim() } : {}),
 });
 
@@ -305,6 +308,7 @@ export const fromBookingDetailToUpdateForm = (
     handLuggage: booking.vehicle.handLuggage ?? 0,
     smallCheckedCase: booking.vehicle.smallCheckedCase ?? 0,
     largeCheckedCase: booking.vehicle.largeCheckedCase ?? 0,
+    pricingTotal: booking.pricing.total,
     adminNote: "",
   };
 };
