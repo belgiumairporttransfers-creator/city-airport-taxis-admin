@@ -156,6 +156,7 @@ export const getBookingsParamsSchema = z.object({
   limit: z.number().optional(),
   search: z.string().optional(),
   status: bookingStatusSchema.optional(),
+  excludeStatus: bookingStatusSchema.optional(),
   tripPhase: bookingTripPhaseSchema.optional(),
   paymentStatus: bookingPaymentStatusSchema.optional(),
   paymentMethod: z.enum(["mollie", "pay_onboard"]).optional(),

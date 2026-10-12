@@ -39,6 +39,7 @@ type BookingsListPageProps = {
 const BookingsListPage = ({ viewKey }: BookingsListPageProps) => {
   const view = BOOKING_LIST_VIEWS[viewKey];
   const lockedStatus = view.status;
+  const excludeStatus = view.excludeStatus;
   const lockedTripPhase = view.tripPhase;
   const hideStatusFilter = Boolean(view.hideStatusFilter);
 
@@ -64,6 +65,8 @@ const BookingsListPage = ({ viewKey }: BookingsListPageProps) => {
     limit,
     search,
     status: lockedStatus ?? (statusFilter || undefined),
+    excludeStatus:
+      !lockedStatus && !statusFilter && excludeStatus ? excludeStatus : undefined,
     tripPhase: lockedTripPhase,
     paymentMethod: paymentMethodFilter || undefined,
     pickupDateFrom: pickupDateRange?.pickupDateFrom,
@@ -117,13 +120,22 @@ const BookingsListPage = ({ viewKey }: BookingsListPageProps) => {
     [columnFilters, hideStatusFilter]
   );
 
-  const filterColumns = React.useMemo(
-    () =>
-      hideStatusFilter
-        ? getBookingFilterColumns().filter((column) => column.column !== "status")
-        : getBookingFilterColumns(),
-    [hideStatusFilter]
-  );
+  const filterColumns = React.useMemo(() => {
+    const columns = hideStatusFilter
+      ? getBookingFilterColumns().filter((column) => column.column !== "status")
+      : getBookingFilterColumns();
+
+    if (!excludeStatus) return columns;
+
+    return columns.map((column) =>
+      column.column === "status"
+        ? {
+            ...column,
+            options: column.options?.filter((option) => option.value !== excludeStatus),
+          }
+        : column
+    );
+  }, [hideStatusFilter, excludeStatus]);
 
   const columns = React.useMemo(
     () =>

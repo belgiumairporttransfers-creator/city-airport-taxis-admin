@@ -18,6 +18,7 @@ export type BookingListView = {
   description: string;
   href: string;
   status?: BookingStatus;
+  excludeStatus?: BookingStatus;
   tripPhase?: BookingTripPhase;
   hideStatusFilter?: boolean;
 };
@@ -28,6 +29,7 @@ export const BOOKING_LIST_VIEWS: Record<BookingListViewKey, BookingListView> = {
     title: "Bookings",
     description: "Manage customer bookings, payments, and trip requests.",
     href: "/trips",
+    excludeStatus: "complete",
   },
   pending: {
     key: "pending",
